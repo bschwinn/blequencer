@@ -1,0 +1,17 @@
+{
+    "name": "sequentiator",
+    "version": "0.0.1",
+    "main": "main.js",
+    "author": "brian schwinn",
+    "description": "sequentiator - BluetoothLE/Arduino Analog sequencer",
+    "devDependencies": {
+        "electron-packager": "^8.4.0",
+        "electron-rebuild": "^1.5.0",
+        "electron": "1.4.13"
+    },
+    "scripts" : {
+        "bootstrap" : "cd app && npm install",
+        "rebuild" : "./node_modules/.bin/electron-rebuild -v 1.4.13 -m ./app/",
+        "start" : "./node_modules/.bin/electron ./app/"
+    }
+}

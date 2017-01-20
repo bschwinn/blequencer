@@ -1,0 +1,11 @@
+{
+    "name": "sequentiator",
+    "version": "0.0.1",
+    "main": "main.js",
+    "author": "brian schwinn",
+    "description": "sequentiator - BluetoothLE/Arduino Analog sequencer",
+    "devDependencies" : {
+        "noble": "^1.7.0",
+        "serialport": "^4.0.0"
+    }
+}

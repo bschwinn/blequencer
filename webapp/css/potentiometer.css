@@ -1,0 +1,42 @@
+._potentiometer{
+	position:relative;
+}
+
+._potentiometer ._potentiometer_top {
+	position:absolute;
+	top:0;
+	left:0;
+	background:url('potentiometer.png') 50% 50% no-repeat;
+	background-size: contain;
+	z-index:10;
+	cursor:default !important;
+}
+
+._potentiometer ._potentiometer_base {
+	border-radius:50%;
+	box-shadow:0 4px 0 #4a5056, 5px 5px 5px #000;
+	position:absolute;
+	top:-1px;
+	left:1px;
+	z-index:1;
+}
+
+._potentiometer ._potentiometer_top:after {
+	content:'';
+	width:3px;
+	height:3px;
+	background-color:#222;
+	position:absolute;
+	top:90%;
+	left:10px;
+	margin-top:-5px;
+	border-radius: 50%;
+	cursor:default !important;
+	box-shadow: 0 0 1px #5a5a5a inset;
+}
+
+._potentiometer [draggable] {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
