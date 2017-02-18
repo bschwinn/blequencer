@@ -37,8 +37,7 @@ void VoltMeter::update() {
 // take a sample reading and call the update callback
 void VoltMeter::_sampleVoltage() {
     int val = analogRead(_meterPin);
-    float ratio = (val * _vref) / 1024.0;
-    float volts = ratio / (_R2 / (_R1 + _R2));
-//    onUpdate(volts);
-    onUpdate(1.0*val);
+    float volts = (val / 1023.0) * _vref;
+    float volts2 = volts / (_R2 / (_R1 + _R2)); // scale up
+    onUpdate(volts);
 }

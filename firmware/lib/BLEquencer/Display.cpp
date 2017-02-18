@@ -14,7 +14,11 @@ Display::Display(int splash) {
 }
 
 // set us up
-void Display::begin() {
+void Display::begin(bool arpMode, bool shFollow, float spd, int gateWidth) {
+    _arpMode = arpMode;
+    _shFollowMode = shFollow;
+    _speed = spd;
+    _gateWidth = gateWidth;
     _lcd = Adafruit_RGBLCDShield();
     _lcd.begin(16,2);
     this->_splashDisplay();
@@ -39,26 +43,55 @@ void Display::_splashDisplay() {
 
 void Display::_initDisplay() {
     _lcd.clear();
+    this->setArpMode(_arpMode);
+    this->setSampleHoldMode(_shFollowMode);
+    this->setSpeed(_speed);
+    this->setGateWidth(_gateWidth);
+}
+
+void Display::setArpMode(bool arp) {
+    _arpMode = arp;
     _lcd.setCursor(0,0);
-    _lcd.print("MOD ");
-    _lcd.setCursor(8,0);
-    _lcd.print("BPM ");
-    _lcd.setCursor(0,1);
-    _lcd.print("VOLT ");
+    if ( arp ) {
+        _lcd.print("ARP");
+    } else {
+        _lcd.print("SEQ");
+    }
 }
 
-void Display::setMode(char *mod) {
+void Display::setSampleHoldMode(bool follow) {
+    _shFollowMode = follow;
     _lcd.setCursor(5,0);
-    _lcd.print(mod);
+    if ( follow ) {
+        _lcd.print("FOL");
+    } else {
+        _lcd.print("HLD");
+    }
 }
 
-void Display::setSpeed(int spd) {
-    _lcd.setCursor(12,0);
+void Display::setSpeed(float spd) {
+    _speed = spd;
+    _lcd.setCursor(11,0);
     _lcd.print(spd);
 }
 
-void Display::setVoltage(int volts) {
-    _lcd.setCursor(6,1);
+void Display::setVoltage(float volts) {
+    _lcd.setCursor(12,1);
     _lcd.print(volts);
+}
+
+void Display::setGateWidth(int gw) {
+    _gateWidth = gw;
+    if ( gw < 10 ) {
+        _lcd.setCursor(0,1);
+        _lcd.print(' ');
+        _lcd.setCursor(1,1);
+        _lcd.print(gw);
+    } else {
+        _lcd.setCursor(0,1);
+        _lcd.print(gw);
+    }
+    _lcd.setCursor(2,1);
+    _lcd.print('%');
 }
 

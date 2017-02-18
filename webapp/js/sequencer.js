@@ -68,6 +68,10 @@ var SPEED_MULT_2X = 2;
 var multiplier = SPEED_MULT_1X;
 // received from container/uController
 var bpm = 0;
+// sample/hold
+var SHMODE_NORMAL = 0;
+var SHMODE_FOLLOW = 1;
+var selectedSHMode = SHMODE_NORMAL;
 
 // initialize container
 var seqConf = { speed: masterSpeed, multiplier: 1, range: 200, offset: 50 };
@@ -232,6 +236,11 @@ setMode = function(mode) {
 	updateStepDisplay();
 	updateSelectedMode();
 }
+setSHMode = function(shmode) {
+	selectedSHMode = shmode;
+	seqCont.sendData( { shmode: ((shmode==SHMODE_NORMAL) ? "normal" : "follow") } );
+	updateSelectedSHMode();
+}
 // bpm data handler (from the sequencer)
 updateBPM = function(bpm) {
 	$('#seqBPM').text(bpm.toFixed(1));
@@ -344,6 +353,16 @@ updateSelectedMode = function() {
 		$('#seqModeSelector').removeClass('btn-default').addClass('btn-warning');
 	}
 }
+// update the sample/hold mode buttons (normal or follow)
+updateSelectedSHMode = function() {
+	if (selectedSHMode == SHMODE_NORMAL) {
+		$('#sampHoldNormalSelector').removeClass('btn-default').addClass('btn-warning');
+		$('#sampHoldFollowSelector').removeClass('btn-warning').addClass('btn-default');
+	} else {
+		$('#sampHoldNormalSelector').removeClass('btn-warning').addClass('btn-default');
+		$('#sampHoldFollowSelector').removeClass('btn-default').addClass('btn-warning');
+	}
+}
 
 // update the console log
 updateConsole = function(data, isError) {
@@ -446,6 +465,14 @@ initModeButtons = function() {
 		setMode(MODE_SEQ);
 	});
 }
+initSampleHoldButtons = function() {
+	$('#sampHoldNormalSelector').click(function() {
+		setSHMode(SHMODE_NORMAL);
+	});
+	$('#sampHoldFollowSelector').click(function() {
+		setSHMode(SHMODE_FOLLOW);
+	});
+}
 initGateSlider = function() {
 	var slider = $('#gateWidthSlider')[0];
 	noUiSlider.create(slider, {
@@ -494,7 +521,9 @@ initMasterSection = function() {
 	// noise selector buttons/faders
 	initNoiseButtons();
 	initGateSlider();
-
+	// sample/hold mode (normal/follow)
+	initSampleHoldButtons();
+	updateSelectedSHMode();
 	// master transport
 	initTransportButtons();
 	updateTransportButtons();

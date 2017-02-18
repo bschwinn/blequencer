@@ -232,6 +232,8 @@ microControllerSerial.prototype = {
             parsed = "note " + data.output + "," + data.step + "," + data.val + "," + ((data.enabled) ? "1" : "0") + "\n";
         } else if ( data.gate != null ) {
             parsed = "gate " + data.gate + "\n";
+        } else if ( data.shmode != null ) {
+            parsed = "shmo " + ((data.shmode=="follow") ? 1 : 0) + "\n";
         }
         return parsed;
     },

@@ -55,7 +55,9 @@ public:
     void  setNoiseColor(int color);
     void  setArpMode(bool onoff);
     void  setGateWidth(int pct);
+    void  setSampleHoldMode(bool);
     bool  getArpMode();
+    bool  getSampleHoldMode();
     bool  getNoise();
     int   getNoiseColor();
     float getSpeed();

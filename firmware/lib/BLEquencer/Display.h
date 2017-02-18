@@ -27,12 +27,14 @@ class Display {
 public:
     Display(int);
     
-    void begin();
+    void begin(bool, bool, float, int);
     void update();
     
-    void setMode(char *);
-    void setSpeed(int);
-    void setVoltage(int);
+    void setSpeed(float);
+    void setVoltage(float);
+    void setArpMode(bool);
+    void setSampleHoldMode(bool);
+    void setGateWidth(int);
     
 private:
     Adafruit_RGBLCDShield _lcd;
@@ -40,6 +42,11 @@ private:
     bool _splashing;
     int _splashTime;
     unsigned int _startTime;
+    
+    bool _arpMode;
+    bool _shFollowMode;
+    float _speed;
+    int _gateWidth;
     
     void _splashDisplay();
     void _initDisplay();

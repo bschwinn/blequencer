@@ -184,8 +184,15 @@ void BLEquencer::setGateWidth(int pwidth) {
     }
 }
 
+void BLEquencer::setSampleHoldMode(bool follow) {
+    _sampHoldFollow = follow;
+}
+
 bool BLEquencer::getArpMode() {
     return _arpEnabled;
+}
+bool BLEquencer::getSampleHoldMode() {
+    return _sampHoldFollow;
 }
 
 int BLEquencer::getGateWidth() {

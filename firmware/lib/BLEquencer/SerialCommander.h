@@ -39,8 +39,9 @@ public:
     static const int CMD_NOTE  = 7;
     static const int CMD_NOISE = 8;
     static const int CMD_NZCOL = 9; // noise color
-    static const int CMD_MODE = 10;
-    static const int CMD_GATE = 11;
+    static const int CMD_MODE  = 10;
+    static const int CMD_GATE  = 11;
+    static const int CMD_SHMOD = 12; // sample/hold mode
 
     static const int CMD_UNDEF = 99;
 

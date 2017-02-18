@@ -22,7 +22,7 @@ void setup() {
   // init the serial commander (monitor)
   commander.begin(115200);
   // init our display
-  lcd.begin();
+  lcd.begin(seq.getArpMode(), seq.getSampleHoldMode(), seq.getSpeed(), seq.getGateWidth());
   // init the sequencer itself
   seq.begin(2, 3, 4, 5, 0, 6, 7);
   // init the volt meter (used for calibration)
@@ -49,8 +49,8 @@ void handleCmd(int cmd, int args[]) {
     case SerialCommander::CMD_BPM:
       // set speed and echo back to UI
       commander.sendSpeedUpdate(args[0]);
-      seq.setSpeed(args[0]/10);  // TODO this divide by 10 should be handled a better
-      lcd.setSpeed(args[0]);
+      seq.setSpeed(args[0]/10.0);  // TODO this divide by 10 should be handled a better
+      lcd.setSpeed(args[0]/10.0);
       break;
     case SerialCommander::CMD_NOTE:
       seq.setNote(args[0], args[1], args[2], args[3]==1);
@@ -87,9 +87,15 @@ void handleCmd(int cmd, int args[]) {
       break;
     case SerialCommander::CMD_MODE:
       seq.setArpMode(args[0]==1);
+      lcd.setArpMode(args[0]==1);
       break;
     case SerialCommander::CMD_GATE:
       seq.setGateWidth(args[0]);
+      lcd.setGateWidth(args[0]);
+      break;
+    case SerialCommander::CMD_SHMOD:
+      seq.setSampleHoldMode(args[0]==1);
+      lcd.setSampleHoldMode(args[0]==1);
       break;
   }
 }

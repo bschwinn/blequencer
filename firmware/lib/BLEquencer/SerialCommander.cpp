@@ -101,6 +101,8 @@ void SerialCommander::parseSerialCommand(const char cmd[CMD_LENGTH+1], const cha
         serCmd = CMD_MODE;
     } else if ( strcmp(cmd, "gate ") == 0 ) {
         serCmd = CMD_GATE;
+    } else if ( strcmp(cmd, "shmo ") == 0 ) {
+        serCmd = CMD_SHMOD;
     } else {
         Serial.print("SerialCommander error - cmd: ");
         Serial.print(cmd);
