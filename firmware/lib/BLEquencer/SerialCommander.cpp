@@ -15,7 +15,7 @@ SerialCommander::SerialCommander(void (*callback)(int, const int[ARG_LENGTH]), v
     onCommandError = errcallback;
 }
 
-void SerialCommander::init(int baud) {
+void SerialCommander::begin(uint16_t baud) {
     _baud = baud;
 }
 
@@ -97,7 +97,15 @@ void SerialCommander::parseSerialCommand(const char cmd[CMD_LENGTH+1], const cha
         serCmd = CMD_NOISE;
     } else if ( strcmp(cmd, "nzcol") == 0 ) {
         serCmd = CMD_NZCOL;
+    } else if ( strcmp(cmd, "mode ") == 0 ) {
+        serCmd = CMD_MODE;
+    } else if ( strcmp(cmd, "gate ") == 0 ) {
+        serCmd = CMD_GATE;
     } else {
+        Serial.print("SerialCommander error - cmd: ");
+        Serial.print(cmd);
+        Serial.print(", data: ");
+        Serial.println(args);
         onCommandError(cmd, args);
         return;
     }
@@ -121,7 +129,14 @@ void SerialCommander::parseSerialCommand(const char cmd[CMD_LENGTH+1], const cha
     onCommand(serCmd,serArgs);
 }
 
+void SerialCommander::sendSpeedUpdate(int bpm) {
+    Serial.print("bpm  ");
+    Serial.println(bpm);
+}
 
-
+void SerialCommander::sendStepUpdate(int step) {
+    Serial.print("step ");
+    Serial.println(step);
+}
 
 

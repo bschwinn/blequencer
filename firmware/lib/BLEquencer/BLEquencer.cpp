@@ -10,7 +10,7 @@
 
 /* BLE Sequencer */
 
-BLEquencer::BLEquencer(const int vals1[MAX_STEPS], const int vals2[MAX_STEPS], const bool resets[MAX_STEPS], void (*callback)(int, int, int)) {
+BLEquencer::BLEquencer(void (*callback)(int)) {
     // defauls/initialization
     _running = false;
     _bpm = 60;
@@ -18,27 +18,75 @@ BLEquencer::BLEquencer(const int vals1[MAX_STEPS], const int vals2[MAX_STEPS], c
     _noiseSeed = 0x55aa55aaL;
     _noiseColor = 250;
     _prevNoise = 0;
-    _triggered = false;
+    _arpEnabled = false;
+    _triggerOn = false;
     _prevTrigger = 0;
-
-    // copy array args into member vars
-    memcpy(_notes, vals1, MAX_STEPS*sizeof(int));
-    memcpy(_notes2, vals2, MAX_STEPS*sizeof(int));
-    memcpy(_resets, resets, MAX_STEPS*sizeof(bool));
+    _gateOn = false;
+    _prevGate = 0;
+    _gateWidth = 75;
+    _sampHoldFollow = false;
     
+    _notes[0] = tonic;
+    _notes[1] = major3rd;
+    _notes[2] = fifth;
+    _notes[3] = major7th;
+    _notes[4] = octave;
+    _notes[5] = major7th;
+    _notes[6] = fifth;
+    _notes[7] = major3rd;
+    _notes[8] = tonic;
+    _notes[9] = major3rd;
+    _notes[10] = fifth;
+    _notes[11] = major7th;
+    _notes[12] = octave;
+    _notes[13] = major7th;
+    _notes[14] = fifth;
+    _notes[15] = major3rd;
+    
+    _notes2[0] = 511;
+    _notes2[1] = 1023;
+    _notes2[2] = 1535;
+    _notes2[3] = 2047;
+    _notes2[4] = 2559;
+    _notes2[5] = 3071;
+    _notes2[6] = 3583;
+    _notes2[7] = 4071;
+    _notes2[8] = 3583;
+    _notes2[9] = 3071;
+    _notes2[10] = 2559;
+    _notes2[11] = 2047;
+    _notes2[12] = 1535;
+    _notes2[13] = 1023;
+    _notes2[14] = 511;
+    _notes2[15] = 128;
+    
+    _resets[15] = true;
+        
     // the "beat" callback
     onBeat = callback;
     
-    _step = this->getFirstReset();
+    _step = this->_getFirstReset();
 }
 
-void BLEquencer::init(int noisePin, int gatePin, int triggerPin) {
+void BLEquencer::begin(int noisePin, int gatePin, int triggerPin, int inputGatePin, int sampHoldIn, int sampHoldOut, int sampHoldClk) {
+
+    // our 12 bit DACs for main CVs
+    _dac1.begin(0x62);
+    _dac2.begin(0x63);
+    // pin assignments and modes
     _noisePin = noisePin;
     _gatePin = gatePin;
     _triggerPin = triggerPin;
+    _inputGatePin = inputGatePin;
+    _sampHoldIn = sampHoldIn;
+    _sampHoldOut = sampHoldOut;
+    _sampHoldClk = sampHoldClk;
     pinMode(_noisePin, OUTPUT);
     pinMode(_gatePin, OUTPUT);
     pinMode(_triggerPin, OUTPUT);
+    pinMode(_inputGatePin, INPUT);
+    pinMode(_sampHoldOut, OUTPUT); // 8 bit PWM output
+    pinMode(_sampHoldClk, INPUT);
 }
 
 /* control functions */
@@ -53,11 +101,12 @@ void BLEquencer::pause() {
 
 void BLEquencer::stop() {
     _running = false;
-    _step = this->getFirstReset();
+    _step = this->_getFirstReset();
     _prevNote = 0;
     // generate a beat event (but don't play)
     // fake being on first step when we're really on the last
-    onBeat(0, _notes[0], _notes2[0]);
+    onBeat(0);
+    this->_gateLow();
 }
 
 void BLEquencer::reset() {
@@ -71,16 +120,16 @@ void BLEquencer::next() {
     } else {
         _step++;
     }
-    this->playStep(_step);
+    this->_playStep(_step);
 }
 
 void BLEquencer::prev() {
     if ( _step == 0 ) {
-        _step = this->getFirstReset();
+        _step = this->_getFirstReset();
     } else {
         _step--;
     }
-    this->playStep(_step);
+    this->_playStep(_step);
 }
 
 void BLEquencer::setSpeed(float bpm) {
@@ -114,51 +163,139 @@ bool BLEquencer::getNoise() {
     return _noiseEnabled;
 }
 
+float BLEquencer::getSpeed() {
+    return _bpm;
+}
+
 int BLEquencer::getNoiseColor() {
     return _noiseColor;
 }
 
+void BLEquencer::setArpMode(bool onoff) {
+    _arpEnabled = onoff;
+}
+
+void BLEquencer::setGateWidth(int pwidth) {
+    _gateWidth = pwidth;
+    if (_gateWidth > 95) {
+        _gateWidth = 95;
+    } else if (_gateWidth < 5) {
+        _gateWidth = 5;
+    }
+}
+
+bool BLEquencer::getArpMode() {
+    return _arpEnabled;
+}
+
+int BLEquencer::getGateWidth() {
+    return _gateWidth;
+}
+
 // TODO - deal with micro second roll-over??!!?  70 minutes is quite some time, but the trigger/gate would be stuck
 void BLEquencer::update() {
+    // ARP MODE - scan/debounce input gate and start/stop accordingly
+    if (_arpEnabled) {
+        int inGate = digitalRead(_inputGatePin);
+        if (inGate != _lastInGate) {
+            if ( inGate == HIGH ) {
+                this->play();
+            } else {
+                this->stop();
+            }
+        }
+        _lastInGate = inGate;
+    }
+    
     // take timer snaps shots
     unsigned long currMillis = millis();
     unsigned long currMicros = micros();
+    float beat = 1/_bpm*60000; // BPM to milliseconds
+    
+    // trigger reset timing
+    if (_triggerOn && ((currMicros - _prevTrigger) > TRIGGER_DURATION )) {
+        this->_triggerLow();
+    }
     
     // sequencer note timing
     if ( _running ) {
-        float beat = 1/_bpm*60000; // BPM to milliseconds
-        if((currMillis - _prevNote) > beat) {
+        if ((currMillis - _prevNote) > beat) {
             _prevNote = currMillis;
             this->next();
         }
-    }
-    
-    // trigger duration timing
-    if (_triggered && (_prevTrigger > TRIGGER_DURATION )) {
-        digitalWrite (_triggerPin, 0);
-        _triggered = false;
-    }
-    
-    // noise bit shifting and updating
-    if ( _noiseEnabled ) {
-        if((currMicros - _prevNoise) > _noiseColor) {
-            b31 = (_noiseSeed & (1L << 31)) >> 31;
-            b29 = (_noiseSeed & (1L << 29)) >> 29;
-            b25 = (_noiseSeed & (1L << 25)) >> 25;
-            b24 = (_noiseSeed & (1L << 24)) >> 24;
-            lobit = b31 ^ b29 ^ b25 ^ b24;
-            newseed = (_noiseSeed << 1) | lobit;
-            _noiseSeed = newseed;
-            digitalWrite (_noisePin, _noiseSeed & 1);
-            _prevNoise = currMicros;
+        if (_gateOn && ((currMillis - _prevNote) > (_gateWidth/100) * beat) ) {
+            this->_gateLow();
         }
     }
+    
+    // noise updating
+    if ( _noiseEnabled ) {
+        if((currMicros - _prevNoise) > _noiseColor) {
+            this->_makeNoise();
+        }
+    }
+    
+    // sample and hold w/ follow mode
+    int smpClk = digitalRead(_sampHoldClk);
+    if ( _sampHoldFollow ) {
+        // input follows output until click goes high (and output freezes)
+        if (smpClk==0) {
+            // copy S/H input to S/H output
+            this->_sampleHold();
+        }
+    } else {
+        // standard sample/hold, snapshot on rising edge of clock pulse
+        if (smpClk != _lastSampHoldClk) {
+            if ( smpClk == HIGH ) {
+                this->_sampleHold();
+            }
+        }
+    }
+    _lastSampHoldClk = smpClk;
 }
 
 
 /* internal functions */
 
-int BLEquencer::getFirstReset() {
+// generate and write the bit noise
+void BLEquencer::_makeNoise() {
+    b31 = (_noiseSeed & (1L << 31)) >> 31;
+    b29 = (_noiseSeed & (1L << 29)) >> 29;
+    b25 = (_noiseSeed & (1L << 25)) >> 25;
+    b24 = (_noiseSeed & (1L << 24)) >> 24;
+    lobit = b31 ^ b29 ^ b25 ^ b24;
+    newseed = (_noiseSeed << 1) | lobit;
+    _noiseSeed = newseed;
+    digitalWrite (_noisePin, _noiseSeed & 1);
+    _prevNoise = micros();
+}
+
+// turn on the trigger and track the time
+void BLEquencer::_triggerHigh() {
+    digitalWrite (_triggerPin, 1);
+    _triggerOn = true;
+}
+
+// turn off the trigger
+void BLEquencer::_triggerLow() {
+    digitalWrite (_triggerPin, 0);
+    _triggerOn = false;
+}
+
+// turn on the gate and track the time
+void BLEquencer::_gateHigh() {
+    digitalWrite (_gatePin, 1);
+    _gateOn = true;
+}
+
+// turn off the gate
+void BLEquencer::_gateLow() {
+    digitalWrite (_gatePin, 0);
+    _gateOn = false;
+}
+
+// get the first of all the resets (from zero)
+int BLEquencer::_getFirstReset() {
     for (int i=0; i<MAX_STEPS; i++ ) {
         if ( _resets[i] == true ) {
             return i;
@@ -167,16 +304,29 @@ int BLEquencer::getFirstReset() {
     return MAX_STEPS-1;
 }
 
-void BLEquencer::playStep(int step) {
+// copy S/H input to S/H output
+void BLEquencer::_sampleHold() {
+    // read alalog in
+    int shin = analogRead(_sampHoldIn);
+    // scale 10 bit to 8 bit
+    int shout = (shin/1024.0) * 255;
+    // write analog out
+    analogWrite(_sampHoldOut, shout);
+}
+
+// play a step
+void BLEquencer::_playStep(int step) {
     // always trigger since this is a clock pulse for the sequencer
-    digitalWrite (_triggerPin, 1);
-    _triggered = true;
+    this->_triggerHigh();
     _prevTrigger = micros();
-    // gate is another matter, if step is disabled, no gate
-    if ( _notes[step] > 0 ) {
-        // generate gate signal
-        // TODO should enables be bank-independent like resets?
+    // only generate a gate in sequencer mode, arp mode doesn't generate gates, it reacts to them
+    if (!_arpEnabled) {
+        this->_gateHigh();
+        _prevGate = micros();
     }
-    // always generate a beat "event" so the DACs can be zero'ed
-    onBeat(step, _notes[step], _notes2[step]);
+    // generate a beat "event" so the DACs can be zero'ed
+    _dac1.setVoltage(_notes[step], false);
+    _dac2.setVoltage(_notes2[step], false);
+
+    onBeat(step);
 }

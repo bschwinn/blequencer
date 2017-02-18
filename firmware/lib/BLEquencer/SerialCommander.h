@@ -24,8 +24,10 @@ public:
     SerialCommander(void (*callback)(int, const int[ARG_LENGTH]), void (*errcallback)(const char[CMD_LENGTH+1], const char[LINE_LENGTH-CMD_LENGTH-1]));
     
     // called each scan
-    void init(int);
+    void begin(uint16_t);
     void update();
+    void sendSpeedUpdate(int);
+    void sendStepUpdate(int);
 
     static const int CMD_BPM   = 0;
     static const int CMD_PLAY  = 1;
@@ -37,6 +39,9 @@ public:
     static const int CMD_NOTE  = 7;
     static const int CMD_NOISE = 8;
     static const int CMD_NZCOL = 9; // noise color
+    static const int CMD_MODE = 10;
+    static const int CMD_GATE = 11;
+
     static const int CMD_UNDEF = 99;
 
 private:

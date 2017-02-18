@@ -4,7 +4,6 @@
  * Combination sequencer and arpeggiator.  2 Analog outputs.
  * - Analog output 1 can be either bank1 or arpeggiator
  * - Analog output 2 is always bank2
- *
  */
 
 // data model helpers
@@ -44,7 +43,7 @@ var stepsBank2 = populateSteps(numberOfSteps, true);
 var arpSteps = populateArpSteps(numberOfSteps, false);
 // master output CV offset and BPM
 var masterOutput = 127;
-var masterSpeed = 127;
+var masterSpeed = 2047;
 // output mode selector - arpegiator vs. standard sequencer
 var MODE_SEQ = 0;
 var MODE_ARP = 1;
@@ -71,7 +70,7 @@ var multiplier = SPEED_MULT_1X;
 var bpm = 0;
 
 // initialize container
-var seqConf = { maxSteps: numberOfSteps, speed: masterSpeed, multiplier: 1, range: 200, offset: 50, resets: resets };
+var seqConf = { speed: masterSpeed, multiplier: 1, range: 200, offset: 50 };
 var seqCont = new sequencerContainer(seqConf);
 seqCont.addEventHandler( "on-info", function(data) {
 	updateSeqInfo(data);
@@ -153,6 +152,12 @@ handleSpeedSlider = function(values, handle, unencoded) {
 	masterSpeed = values[handle];
 	seqCont.sendData( { speed: masterSpeed } );
 }
+// speed slider handling
+handleGateSlider = function(values, handle, unencoded) {
+	gateWidth = parseInt(values[handle]);
+	$('#gateWidth').text(gateWidth + '%');
+	seqCont.sendData( { gate: gateWidth } );
+}
 // output voltage slider handling
 handleOutputSlider = function(values, handle, unencoded) {
 	masterOutput = values[handle];
@@ -169,14 +174,14 @@ handleArpStepToggle = function(idx, enabled) {
 	seqCont.sendData( { output: OUT_1, step: idx, enabled: enabled } ); // Bank/Output is locked at 1 for arp
 }
 // set the value (CV) for a step
-handleStepSlider = function(idx, val) {
+handleStepSlider = function(idx, val, onoff) {
 	var steps = ( selectedBank == BANK_1 ) ? stepsBank1 : stepsBank2;
 	steps[idx].val = val;
-	seqCont.sendData( { output: (( selectedBank == BANK_1 ) ? OUT_1 : OUT_2), step: idx, val: val } );
+	seqCont.sendData( { output: (( selectedBank == BANK_1 ) ? OUT_1 : OUT_2), step: idx, val: val, enabled: onoff } );
 }
-handleArpStepSlider = function(idx, val) {
+handleArpStepSlider = function(idx, val, onoff) {
 	arpSteps[idx].val = val;
-	seqCont.sendData( { output: OUT_1, step: idx, val: val } );  // Bank/Output is locked at 1 for arp
+	seqCont.sendData( { output: OUT_1, step: idx, val: val, enabled: onoff } );  // Bank/Output is locked at 1 for arp
 }
 // visually disable all steps after the first reset
 // pass step reset up to container
@@ -215,13 +220,13 @@ setMode = function(mode) {
 	function getAllStepData(arr) {
 		var ret = [];
 		for(var i=0; i<arr.length; i++) {
-			var thing = { output: OUT_1, step: i, val: arr[i].val, enabled: arr[i].enabled, reset: arr[i].reset };
+			var thing = { output: OUT_1, step: i, val: arr[i].val, enabled: arr[i].enabled, reset: resets[i] };
 			ret[ret.length] = thing;
 		}
 		return ret;
 	}
 	selectedMode = mode;
-	seqCont.sendData( { output: OUT_1, mode: (mode==MODE_ARP) ? "arp" : "seq" } );
+	seqCont.sendData( { mode: ((mode==MODE_ARP) ? "arp" : "seq") } );
 	seqCont.sendBatch( getAllStepData((mode==MODE_ARP) ? arpSteps : stepsBank1));
 	updateStepValues();
 	updateStepDisplay();
@@ -231,6 +236,7 @@ setMode = function(mode) {
 updateBPM = function(bpm) {
 	$('#seqBPM').text(bpm.toFixed(1));
 }
+
 // update step values/toggles (useful for changing banks)
 updateStepValues = function() {
 	if ( selectedMode == MODE_ARP && selectedBank == BANK_1) {
@@ -333,11 +339,9 @@ updateSelectedMode = function() {
 	if (selectedMode == MODE_ARP) {
 		$('#arpModeSelector').removeClass('btn-default').addClass('btn-warning');
 		$('#seqModeSelector').removeClass('btn-warning').addClass('btn-default');
-		$('#bank1Selector').text("Arp");
 	} else {
 		$('#arpModeSelector').removeClass('btn-warning').addClass('btn-default');
 		$('#seqModeSelector').removeClass('btn-default').addClass('btn-warning');
-		$('#bank1Selector').html("&#160;&#160;1&#160;&#160;");
 	}
 }
 
@@ -381,7 +385,7 @@ initSpeedSlider = function(){
 		},
 		pips: {
 			mode: 'positions',
-			values: [0,50,100],
+			values: [0,100],
 			density: 4
 		}
 	});
@@ -442,6 +446,20 @@ initModeButtons = function() {
 		setMode(MODE_SEQ);
 	});
 }
+initGateSlider = function() {
+	var slider = $('#gateWidthSlider')[0];
+	noUiSlider.create(slider, {
+		start: 50,
+		orientation: "horizontal",
+		direction: 'ltr',
+		range: {
+			'min': 5,
+			'max': 95
+		}
+	});
+	slider.noUiSlider.on('slide', handleGateSlider);
+}
+
 // initialize/create the ouput sliders and buttons
 initOutputSlider = function(){
 	var slider = $('#outputSlider')[0];
@@ -475,6 +493,7 @@ initMasterSection = function() {
 	updateBankButtons();
 	// noise selector buttons/faders
 	initNoiseButtons();
+	initGateSlider();
 
 	// master transport
 	initTransportButtons();
@@ -518,8 +537,11 @@ initConsole = function() {
 	// console send button
 	$('#seqConsoleSend').click(function(){
 		var req = $('#seqConsoleRequest').val();
-		seqCont.sendRawData(req);
+		seqCont.sendRawData(req + '\n');
 		$('#seqConsoleRequest').val('');
+	});
+	$('#seqConsoleClear').click(function(){
+		$('#seqConsoleResponse').empty();
 	});
 	$('#seqConsoleList').click(function(){
 		seqCont.list();

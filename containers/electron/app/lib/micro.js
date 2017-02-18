@@ -183,42 +183,57 @@ microControllerSerial.prototype = {
         });
     },
     play : function() {
-        this.sendRawData("play ");
+        this.sendRawData("play \n");
     },
     stop : function() {
-        this.sendRawData("stop ");
+        this.sendRawData("stop \n");
     },
     pause : function() {
-        this.sendRawData("pause");
+        this.sendRawData("pause\n");
     },
     reset : function() {
-        this.sendRawData("reset");
+        this.sendRawData("reset\n");
     },
     next : function() {
-        this.sendRawData("next ");
+        this.sendRawData("next \n");
     },
     prev : function() {
-        this.sendRawData("prev ");
+        this.sendRawData("prev \n");
     },
     setNoise : function(noise) {
-        this.sendRawData("noise" + (noise? "1" : "0"));
+        this.sendRawData("noise" + (noise? "1" : "0") + "\n");
     },
     setNoiseColor : function(col) {
-        this.sendRawData("nzcol" + col);
+        this.sendRawData("nzcol" + col + "\n");
     },
     sendRawData : function(data) {
         this.sendToDevice(data);
     },
+    sendBatch : function(data) {
+        var theData = "";
+        for ( var i=0; i<data.length; i++ ) {
+            theData += this.parseData(data[i]);
+        }
+        this.sendToDevice(theData);
+    },
     sendData : function(data) {
+        var parsed = this.parseData(data);
+        this.sendToDevice(parsed);
+    },
+    parseData: function(data) {
+        var parsed = "";
         // parse speed params into a serial message
         if ( (data.speed != null) || (data.multiplier != null) ) {
             var bpm = this.updateInternals(data.speed, data.multiplier);
-            this.sendToDevice("bpm  " + parseInt( bpm.toFixed(1) * 10) ); // multiply by 10 so the protocol only deals with integers
+            parsed = "bpm  " + parseInt( bpm.toFixed(1) * 10) + "\n"; // multiply by 10 so the protocol only deals with integers
+        } else if ( data.mode != null ) {
+            parsed = "mode " + ((data.mode=="arp") ? 1 : 0) + "\n";
         } else if ( data.output != null && data.step != null ) {
-            this.sendToDevice("note " + data.output + "," + data.step + "," + data.val + "," + data.enabled);
-        } else if ( data.output != null && data.step != null ) {
-            this.sendToDevice("note " + data.output + "," + data.step + "," + data.val + "," + data.enabled);
+            parsed = "note " + data.output + "," + data.step + "," + data.val + "," + ((data.enabled) ? "1" : "0") + "\n";
+        } else if ( data.gate != null ) {
+            parsed = "gate " + data.gate + "\n";
         }
+        return parsed;
     },
     updateInternals: function(speed, mult) {
         if ( speed != null ) {
@@ -248,7 +263,7 @@ microControllerSerial.prototype = {
     },
     sendToDevice : function(data) {
         if ( this.device != null ) {
-            this.device.write(data+'\n', function(err) {
+            this.device.write(data, function(err) {
                 if ( err != null ) {
                     console.log("microControllerSerial - error writing data to serial port: " + err.message)
                 }

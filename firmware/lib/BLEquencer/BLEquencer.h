@@ -11,6 +11,7 @@
 
 #include <stdio.h>
 #include "Arduino.h"
+#include <Adafruit_MCP4725.h>
 
 
 /* BLE Sequencer */
@@ -35,61 +36,97 @@
 class BLEquencer {
 
 public:
-    BLEquencer(const int[MAX_STEPS], const int[MAX_STEPS], const bool[MAX_STEPS], void (*callback)(int, int, int));
+    BLEquencer(void (*callback)(int));
 
-    void init(int, int, int);
+    void begin(int, int, int, int, int, int, int);
 
     // control functions
-    void play();
-    void pause();
-    void stop();
-    void reset();
-    void next();
-    void prev();
-    void setSpeed(float bpm);
-    void setNote(int out, int step, int val, bool disabled);
-    void setEnabled(int step, bool enabled);
-    void setReset(int step, bool reset);
-    void setNoise(bool onoff);
-    void setNoiseColor(int color);
-    bool getNoise();
-    int  getNoiseColor();
+    void  init();
+    void  play();
+    void  pause();
+    void  stop();
+    void  reset();
+    void  next();
+    void  prev();
+    void  setSpeed(float bpm);
+    void  setNote(int out, int step, int val, bool enabled);
+    void  setReset(int step, bool reset);
+    void  setNoise(bool onoff);
+    void  setNoiseColor(int color);
+    void  setArpMode(bool onoff);
+    void  setGateWidth(int pct);
+    bool  getArpMode();
+    bool  getNoise();
+    int   getNoiseColor();
+    float getSpeed();
+    int   getGateWidth();
 
     // called each scan
     void update();
 
     // callback for each beat of the sequencer
-    void (*onBeat)(int, int, int);
+    void (*onBeat)(int);
     
 private:
 
     static const int TRIGGER_DURATION  = 10; // in micro seconds
+    
+    float _gateWidth;
 
     int   _notes[MAX_STEPS];
     int   _notes2[MAX_STEPS];
     bool  _resets[MAX_STEPS];
+    
     bool  _running;
+    bool  _arpEnabled;
     float _bpm;
     int   _step;
-
     unsigned long _prevNote;
-    unsigned long _prevTrigger;
-    unsigned long _prevNoise;
 
+    // main CV outs
+    Adafruit_MCP4725 _dac1;
+    Adafruit_MCP4725 _dac2;
+
+    // input gate
+    int _inputGatePin;
+    int _lastInGate;
+    
+    // noise
     bool _noiseEnabled;
     int  _noiseColor;
     int  _noisePin;
+    unsigned long _prevNoise;
     unsigned long int _noiseSeed;
     unsigned long int newseed;
     unsigned char lobit;
     unsigned char b31, b29, b25, b24;
     
+    // output gate
     int  _gatePin;
+    bool _gateOn;
+    unsigned long _prevGate;
+    
+    // output trigger
     int  _triggerPin;
-    bool _triggered;
+    bool _triggerOn;
+    unsigned long _prevTrigger;
+    
+    // sample and hold
+    int _sampHoldIn;
+    int _sampHoldOut;
+    int _sampHoldClk;
+    bool _sampHoldFollow;
+    int _lastSampHoldClk;
 
-    int getFirstReset();
-    void playStep(int);
+    // internals
+    int _getFirstReset();
+    void _playStep(int);
+    void _gateHigh();
+    void _gateLow();
+    void _triggerHigh();
+    void _triggerLow();
+    void _makeNoise();
+    void _sampleHold();
 };
 
 #endif /* BLEquencer_h */

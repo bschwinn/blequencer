@@ -98,6 +98,22 @@ sequencerContainer.prototype = {
     }
 };
 
+
+// container for iOS, needed because iOS/WKWebView
+iOSContainer = function() {};
+iOSContainer.prototype = {
+    send: function(evt, data) {
+        if ( window.webkit != null ) {
+            var pipe = window.webkit.messageHandlers[evt];
+            if ( pipe != null ) {
+                pipe.postMessage(data);
+            }
+        }
+    }
+}
+
+
+
 // sequencer step with slider, enabler and step indicator
 sequencerStep = function(config) {
     if ( arguments.length > 0 ) this.init(config);
@@ -153,7 +169,7 @@ sequencerStep.prototype = {
             that.val = values[handle];
             that.updateVal();
             if ( that.slideHandler != null ) {
-                that.slideHandler( that.stepIndex, that.val );
+                that.slideHandler( that.stepIndex, that.val, that.enabled );
             }
         });
         this.updateSlider();
@@ -245,59 +261,6 @@ arpStep.prototype.updateVal = function() {
     var val = this.noteNames[parseInt(this.val)];
     $(this.valueElem).text(val);
 };
-
-
-// container for iOS, needed because the JS integration with obj-c sux
-iOSContainer = function() {};
-iOSContainer.prototype = {
-    getInfo: function() {
-        this.callUp("getInfo");
-    },
-    send: function(evt, data) {
-        this.callUp(evt, data);
-    },
-    callUp: function(name, data) {
-        var url = "sequencer://{\"functionname\":\"" + name + "\"";
-        if ( data ) {
-            url += ",\"data\":{";
-            // do something real with data
-            if ( data.output != null ) {
-                url += "\"output\" : \"" +  data.output + "\",";
-            }
-            if ( data.step != null ) {
-                url += "\"step\" : \"" +  data.step + "\",";
-            }
-            if ( data.val != null ) {
-                url += "\"val\" : \"" +  data.val + "\",";
-            }
-            if ( data.enabled != null ) {
-                url += "\"enabled\" : \"" +  data.enabled + "\",";
-            }
-            if ( data.mode != null ) {
-                url += "\"mode\" : \"" +  data.mode + "\",";
-            }
-            if ( data.speed != null ) {
-                url += "\"speed\" : \"" +  data.speed + "\",";
-            }
-            if ( data.multiplier != null ) {
-                url += "\"multiplier\" : \"" +  data.multiplier + "\",";
-            }
-            if ( data.reset != null ) {
-                url += "\"reset\" : \"" +  data.reset + "\",";
-            }
-            url = url.substring(0,url.length-1);
-            url += "}";
-        }
-        url += "}";
-        // window.location.href = url;
-        var iframe = document.createElement("IFRAME");
-        iframe.setAttribute("src", url);
-        document.documentElement.appendChild(iframe);
-        iframe.parentNode.removeChild(iframe);
-        iframe = null;      
-    }
-}
-
 
 
 
