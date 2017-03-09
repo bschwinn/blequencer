@@ -322,14 +322,15 @@ microControllerSim.prototype = {
     init : function(config) {
         this.timer = null;
         this.step = 0;
-        this.maxSteps = config.maxSteps;
-        this.resets = config.resets;
         this.speed = config.speed;
         this.multiplier = config.multiplier;
         this.range = config.range;
         this.offset = config.offset;
         this.initialOffset = config.offset;
         this.offsetMult = 2;
+        this.maxSteps = 16;
+        this.resets = new Array(this.maxSteps);
+        this.step = 0;
     },
     getInfoData : function() {
         return { name: "BLEquencer - Hardware Simulator", version: "6.6.6", "features": "BLE" };

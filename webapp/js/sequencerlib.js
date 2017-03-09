@@ -276,14 +276,14 @@ arpStep.prototype.updateVal = function() {
 fakeContainer = function() {};
 fakeContainer.prototype = {
     init: function(config) {
-        this.maxSteps = config.maxSteps;
-        this.resets = config.resets;
         this.speed = config.speed;
         this.multiplier = config.multiplier;
         this.range = config.range;
         this.offset = config.offset;
         this.initialOffset = config.offset;
         this.offsetMult = 2;
+        this.maxSteps = 16;
+        this.resets = new Array(this.maxSteps);
         this.timer = null;
         this.step = 0;
     },
