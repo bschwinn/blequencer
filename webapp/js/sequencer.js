@@ -98,7 +98,7 @@ seqCont.addDataHandler( function(data) {
 	}
 });
 seqCont.addErrorHandler( function(data) {
-    console.log("Container error: " + data);
+    console.error(data);
 	updateConsole(data, true);
 });
 
@@ -230,8 +230,9 @@ setMode = function(mode) {
 		return ret;
 	}
 	selectedMode = mode;
-	seqCont.sendData( { mode: ((mode==MODE_ARP) ? "arp" : "seq") } );
-	seqCont.sendBatch( getAllStepData((mode==MODE_ARP) ? arpSteps : stepsBank1));
+	var batch = getAllStepData((mode==MODE_ARP) ? arpSteps : stepsBank1);
+	batch.unshift({ mode: ((mode==MODE_ARP) ? "arp" : "seq") } );
+	seqCont.sendBatch( batch );
 	updateStepValues();
 	updateStepDisplay();
 	updateSelectedMode();

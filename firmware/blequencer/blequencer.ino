@@ -3,6 +3,9 @@
 #include <VoltMeter.h>
 #include <Display.h>
 
+// baud rate
+#define THEBAUD 9600
+
 // beats and commands handler funcs (see impl below)
 void handleBeat(int);
 void handleCmd(int, int[]);
@@ -18,9 +21,9 @@ Display lcd = Display(3000);
 // initialize the commander, DACs and sequencer
 void setup() {
   // TODO can this be put into the commander????
-  Serial.begin(115200);
+  Serial.begin(THEBAUD);
   // init the serial commander (monitor)
-  commander.begin(115200);
+  commander.begin(THEBAUD);
   // init our display
   lcd.begin(seq.getArpMode(), seq.getSampleHoldMode(), seq.getSpeed(), seq.getGateWidth());
   // init the sequencer itself
@@ -53,13 +56,8 @@ void handleCmd(int cmd, int args[]) {
       lcd.setSpeed(args[0]/10.0);
       break;
     case SerialCommander::CMD_NOTE:
+      commander.sendNoteUpdate(args[1], args[2]);
       seq.setNote(args[0], args[1], args[2], args[3]==1);
-
-      Serial.print("eton step = ");
-      Serial.print(args[1]);
-      Serial.print(", value = ");
-      Serial.println(args[2]);
-
       break;
     case SerialCommander::CMD_PLAY:
       seq.play();

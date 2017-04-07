@@ -28,6 +28,7 @@ public:
     void update();
     void sendSpeedUpdate(int);
     void sendStepUpdate(int);
+    void sendNoteUpdate(int, int);
 
     static const int CMD_BPM   = 0;
     static const int CMD_PLAY  = 1;
@@ -48,7 +49,9 @@ public:
 private:
     int _baud;
     char _rcvdChars[LINE_LENGTH]; // char buffer for serial data (single line)
+    bool _throttling; // currently throttling the serial line with xon/xoff
     void parseSerialLine();
+    void checkBuffer();
     void parseSerialCommand(const char[CMD_LENGTH+1], const char[LINE_LENGTH-CMD_LENGTH-1]);
 
     // callback for each command recieved

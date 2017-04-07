@@ -92,8 +92,9 @@ microController.prototype = {
         this.window.webContents.send( "on-error", err );
     },
     relayData: function(parsed, raw) {
-        this.window.webContents.send( "on-update", parsed );
-        if ( raw != null && typeof raw != 'undefined' ) {
+        if ( parsed != null ) {
+            this.window.webContents.send( "on-update", parsed );
+        } else if ( raw != null ) {
             this.window.webContents.send( "on-update", { "raw" : raw } );
         }
     }
@@ -109,6 +110,9 @@ microControllerSerial.prototype = {
     setup: function(par) {
         this.parent = par;
         this.device = null;
+        this.baudRate = 9600;
+        this.writing = false;
+        this.throttleTime = 33;
     },
     init : function(config) {
         this.speed = config.speed;
@@ -121,39 +125,45 @@ microControllerSerial.prototype = {
         var dev = settings.getDevice();
         if ( dev != null && dev != '' ) {
             // open the device
-            this.device = new sp(dev, { baudRate: 115200, parser: sp.parsers.readline('\n') });
+            this.device = new sp(dev, { baudRate: this.baudRate, parser: sp.parsers.readline('\n') });
 
             // add a "data" listener
             this.device.on('data', function(data) {
-                var parsed = me.serialToData(data);
-                me.parent.relayData(parsed, data);
+                if ( data.indexOf("SerialCommanderError") >=0 ) {
+                    me.logError("Serial error: " + data.replace('SerialCommanderError', ''));
+                } else {
+                    var parsed = me.serialToData(data);
+                    me.parent.relayData(parsed, data);
+                }
             });
             
             // add a "error" listener
             this.device.on('error', function(err) {
-                console.log("microControllerSerial - got serial error: " + err.message);
-                me.parent.relayError(err.message);
+                me.logError("microControllerSerial - got serial error: " + err.message);
             });
 
         } else {
-            this.parent.relayError("microControllerSerial - No serial device specified.");
+            this.logError("microControllerSerial - No serial device specified.");
             this.list();
         }
+    },
+    logError: function(msg) {
+        console.log(msg);
+        this.parent.relayError(msg);
     },
     serialToData: function(data) {
         var cmd = data.substring(0, 5);
         var rest = data.substring(5);
         var args = rest.split(",");
-        var dataObj = {}
         switch(cmd) {
             case "bpm  " :
-                dataObj.bpm = parseInt(rest)/10;  // divide by 10 so the protocol only deals with integers
-                break;
+                return { bpm : (parseInt(rest)/10) };  // speed "echo" from device, divide by 10 so the protocol only deals with integers
             case "step " :
-                dataObj.step = parseInt(args[0]);
-                break;
+                return { step : parseInt(args[0]) };  // when the step updates
+            case "note " :
+                return { note : parseInt(args[0]), val: parseInt(args[1]) };  // note change "echo"
         }
-        return dataObj;
+        return null;
     },
     shutdown: function() {
         if ( this.device != null ) {
@@ -207,18 +217,60 @@ microControllerSerial.prototype = {
         this.sendRawData("nzcol" + col + "\n");
     },
     sendRawData : function(data) {
-        this.sendToDevice(data);
+        if ( this.writing ) {
+            this.logError("microControllerSerial - write in progress, can not sendRawData at this time: " + JSON.stringify(data));
+            return false;
+        } else {
+            this.writing = true;
+            let that = this;
+            this.sendToDevice(data, function(err) {
+                if ( err != null ) {
+                    that.logError("microControllerSerial - error writing raw data to serial port: " + err.message);
+                }
+                that.writing = false;
+            });
+            return true;
+        }
     },
     sendBatch : function(data) {
-        var theData = "";
-        for ( var i=0; i<data.length; i++ ) {
-            theData += this.parseData(data[i]);
+        if ( this.writing ) {
+            this.logError("microControllerSerial - write in progress, can not sendBatch at this time: " + JSON.stringify(data));
+            return false;
+        } else {
+            this.writing = true;
+            let that = this;
+            BucketBrigade(data, function(idx, item, next) {
+                var parsed = that.parseData(item);
+                that.sendToDevice(parsed, function(err, res) {
+                    if ( err != null ) {
+                        that.logError("microControllerSerial - error writing data to serial port: " + err.message);
+                    }
+                    setTimeout(function(){ next(); }, that.throttleTime);
+                    // next();
+                });
+            }, function() {
+                console.log("microControllerSerial - finished writing batch data to serial port");
+                that.writing = false;
+            });
+            return true;
         }
-        this.sendToDevice(theData);
     },
     sendData : function(data) {
-        var parsed = this.parseData(data);
-        this.sendToDevice(parsed);
+        if ( this.writing ) {
+            this.logError("microControllerSerial - write in progress, can not sendData at this time: " + JSON.stringify(data));
+            return false;
+        } else {
+            this.writing = true;
+            let that = this;
+            var parsed = this.parseData(data);
+            this.sendToDevice(parsed, function(err) {
+                if ( err != null ) {
+                    that.logError("microControllerSerial - error writing data to serial port: " + err.message);
+                }
+                that.writing = false;
+            });
+            return true;
+        }
     },
     parseData: function(data) {
         var parsed = "";
@@ -263,18 +315,34 @@ microControllerSerial.prototype = {
         var bpm = (pct * this.multiplier * this.range) + this.offset;
         return bpm;
     },
-    sendToDevice : function(data) {
+    sendToDevice : function(data, callback) {
         if ( this.device != null ) {
-            this.device.write(data, function(err) {
-                if ( err != null ) {
-                    console.log("microControllerSerial - error writing data to serial port: " + err.message)
-                }
+            let that = this;
+            this.device.write(data, function(err, res) {
+                that.device.drain(function(err, res) {
+                    callback(err);
+                });
             });
         }
     }
 }
 
-
+// BucketBrigade - provides serial iteration over a collection of async operations
+//  - items is the list to iterate over
+//  - itemHandler - form: function(itemIndex, item, next), must invoke next() when complete
+//  - done is called when all items have been handled (iteration complete)
+function BucketBrigade(items, itemHandler, done) {
+    var ndx = 0;
+    function next() {
+        ndx++;
+        if (ndx === items.length) {
+            done();
+        } else {
+            itemHandler(ndx, items[ndx], next);
+        }
+    }
+    itemHandler(0, items[0], next); // start the chain with the first item
+}
 
 // a serial micro controller facade that comms with arduino over BLE (using adafruit BLE module)
 microControllerBLE = function(par) {
@@ -392,10 +460,21 @@ microControllerSim.prototype = {
             }
         }
     },
-    sendBatch: function(data) {
-        for ( var i=0; i<data.length; i++ ) {
-            this.sendData(data[i]);
-        }
+    sendBatch : function(data) {
+        console.log("microControllerSim - starting batch data write operation");
+        var startTime = lastTime = new Date().getTime();
+        BucketBrigade(data, function(idx, item, next) {
+            setTimeout(function() {
+                var current = new Date().getTime();
+                var since = current - lastTime;
+                var elapsed = current - startTime;
+                console.log("microControllerSim - batch data write, item: " + idx + " written to serial port at: " + since + ", elaspsed: " + elapsed);
+                lastTime = current;
+                next();
+            }, Math.floor(Math.random() * 10));
+        }, function() {
+            console.log("microControllerSim - finished writing batch data to serial port");
+        });
     },
     sendData: function(data) {
         if ( (data.speed != null) || (data.multiplier != null) ) {

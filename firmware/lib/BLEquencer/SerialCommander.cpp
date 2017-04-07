@@ -22,6 +22,8 @@ void SerialCommander::begin(uint16_t baud) {
 void SerialCommander::update() {
     static byte ndx = 0;
     char theChar;
+
+//    this->checkBuffer();
     
     // TODO time box the while with millis()
     bool lineFound = false;
@@ -31,9 +33,12 @@ void SerialCommander::update() {
         if (theChar != LINE_END) {
             _rcvdChars[ndx] = theChar;
             ndx++;
+            
             // TODO handle overrun of _rcvdChars better
             if (ndx >= LINE_LENGTH) {
                 ndx = LINE_LENGTH - 1;
+                Serial.print("SerialCommanderError(overrun) data: ");
+                Serial.println(_rcvdChars);
             }
         } else {
             _rcvdChars[ndx] = '\0';
@@ -45,6 +50,17 @@ void SerialCommander::update() {
         this->parseSerialLine();
     }
 }
+                
+void SerialCommander::checkBuffer() {
+    if (!_throttling && (Serial.available() > 48) ) {
+        Serial.write(0x13); // xoff
+        _throttling = true;
+    } else if( _throttling && (Serial.available() < 32) ) {
+        Serial.write(0x11); // Xon
+        _throttling = false;
+    }
+}
+
 
 void SerialCommander::parseSerialLine() {
     char cmd[CMD_LENGTH+1]; // char buffer for command
@@ -104,7 +120,7 @@ void SerialCommander::parseSerialCommand(const char cmd[CMD_LENGTH+1], const cha
     } else if ( strcmp(cmd, "shmo ") == 0 ) {
         serCmd = CMD_SHMOD;
     } else {
-        Serial.print("SerialCommander error - cmd: ");
+        Serial.print("SerialCommanderError(unknown) cmd: ");
         Serial.print(cmd);
         Serial.print(", data: ");
         Serial.println(args);
@@ -141,4 +157,10 @@ void SerialCommander::sendStepUpdate(int step) {
     Serial.println(step);
 }
 
+void SerialCommander::sendNoteUpdate(int step, int val) {
+    Serial.print("note ");
+    Serial.print(step);
+    Serial.print(',');
+    Serial.println(val);
+}
 

@@ -254,6 +254,9 @@ BODY {
 	margin:0;
 	padding:0;
 }
+#seqConsoleResponse :nth-child(odd){
+	background: #171717;
+}
 #seqConsoleResponse p.error {
 	color: red;
 }
