@@ -584,6 +584,32 @@ initConsole = function() {
 
 $(document).ready(function(){
 
+	window.addEventListener('keydown', function(e) {
+		if(e.keyCode == 32) {
+			var tag = e.target.tagName;
+			if ( tag != "INPUT" && tag != "TEXTAREA" ) {
+				if (sequencerState == STATE_PLAYING || sequencerState == STATE_PAUSED) {
+					seqStop();
+				} else if (sequencerState == STATE_PAUSED || sequencerState == STATE_STOPPED) {
+					seqStart();
+				}
+				e.preventDefault();
+			}
+		} else if ( e.keyCode == 40 ) {
+			if (sequencerState == STATE_PLAYING) {
+				seqPause();
+			}
+		} else if ( e.keyCode == 39 ) {
+			if (sequencerState == STATE_PAUSED) {
+				seqNext();
+			}
+		} else if ( e.keyCode == 37 ) {
+			if (sequencerState == STATE_PAUSED) {
+				seqPrev();
+			}
+		}
+	});
+
 	initSteps();
 	initMasterSection();
 	initConsole();
