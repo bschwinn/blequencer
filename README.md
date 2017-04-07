@@ -58,6 +58,9 @@ the electron app to the arduino.
 * install arduino software if you don’t have it
 * copy ./firmware/lib/BLEquencer folder to your arduino libraries folder. 
 Dev’s may just want to symlink, ex: ```ln -s /Users/youruser/dev/BLEquencer/firmware/lib/BLEquencer BLEquencer)```
+* ensure you have the Adafruit MCP4725 libraries installed
+* ensure you have the Adafruit RGB LCD Sheild libraries installed
+* ensure you have the Adafruit BluefruitLE libraries installed
 * open ./firmware/blequencer.ino in the arduino IDE
 * download the program to your arduino
 
