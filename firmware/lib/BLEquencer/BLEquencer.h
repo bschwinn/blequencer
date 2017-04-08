@@ -18,6 +18,11 @@
 
 #define MAX_STEPS 16
 #define SEMI_TONE 67
+
+#define STATUS_RUNNING 0
+#define STATUS_PAUSED 1
+#define STATUS_STOPPED 2
+
 #define tonic 0
 #define minor2nd 67
 #define major2nd 134
@@ -49,8 +54,9 @@ public:
     void  next();
     void  prev();
     void  setSpeed(float bpm);
-    void  setNote(int out, int step, int val, bool enabled);
-    void  setReset(int step, bool reset);
+    void  setNote(int out, int step, int val);
+    void  setStepReset(int step, bool reset);
+    void  setStepEnabled(int step, bool enabled);
     void  setNoise(bool onoff);
     void  setNoiseColor(int color);
     void  setArpMode(bool onoff);
@@ -79,7 +85,7 @@ private:
     int   _notes2[MAX_STEPS];
     bool  _resets[MAX_STEPS];
     
-    bool  _running;
+    int   _runStatus;
     bool  _arpEnabled;
     float _bpm;
     int   _step;
@@ -123,6 +129,7 @@ private:
     // internals
     int _getFirstReset();
     void _playStep(int);
+    void _updateDACs(int);
     void _gateHigh();
     void _gateLow();
     void _triggerHigh();

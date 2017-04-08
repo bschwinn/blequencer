@@ -37,9 +37,13 @@ microController.prototype = {
         ipcMain.on('init', function(event, cfg) {
             me.impl.init(cfg);
         });
-        // init the sequencer
+        // list devices
         ipcMain.on('list', function(event) {
             me.impl.list();
+        });
+        // dump device data
+        ipcMain.on('dump', function(event) {
+            me.impl.dump();
         });
         // play the sequencer
         ipcMain.on('play', function(event) {
@@ -113,19 +117,22 @@ microControllerSerial.prototype = {
         this.baudRate = 9600;
         this.writing = false;
         this.throttleTime = 33;
-        this.CMD_BPM   = "1";
-        this.CMD_PLAY  = "2";
-        this.CMD_PAUSE = "3";
-        this.CMD_STOP  = "4";
-        this.CMD_RESET = "5";
-        this.CMD_NEXT  = "6";
-        this.CMD_PREV  = "7";
-        this.CMD_NOTE  = "8";
-        this.CMD_NOISE = "9";
-        this.CMD_NZCOL = ":"; // the following are crap but we're packing the protocol
-        this.CMD_MODE  = ";";
-        this.CMD_GATE  = "<";
-        this.CMD_SHMOD = "=";
+        this.CMD_BPM   = "1";  // val (0-5000) 
+        this.CMD_PLAY  = "2";  // no args
+        this.CMD_PAUSE = "3";  // no args
+        this.CMD_STOP  = "4";  // no args
+        this.CMD_RESET = "5";  // no args
+        this.CMD_NEXT  = "6";  // no args
+        this.CMD_PREV  = "7";  // no args
+        this.CMD_NOTE  = "8";  // step, bank, val (0-4095)
+        this.CMD_NOISE = "9";  // bool
+        this.CMD_NZCOL = ":";  // val (0-500) ??
+        this.CMD_MODE  = ";";  // bool
+        this.CMD_GATE  = "<";  // val (5-95)
+        this.CMD_SHMOD = "=";  // bool
+        this.CMD_DUMP  = ">";  // no args
+        this.CMD_STRST = "?";
+        this.CMD_STENB = "@";
     },
     init : function(config) {
         this.speed = config.speed;
@@ -204,6 +211,9 @@ microControllerSerial.prototype = {
             });
             me.parent.relayData( { "list" : theList}, null);
         });
+    },
+    dump: function() {
+        this.sendRawData(this.CMD_DUMP+"\n");
     },
     play : function() {
         this.sendRawData(this.CMD_PLAY+"\n");
@@ -294,11 +304,13 @@ microControllerSerial.prototype = {
         } else if ( data.mode != null ) {
             parsed = this.CMD_MODE + ((data.mode=="arp") ? "1" : "0") + "\n";
         } else if ( data.output != null && data.step != null ) {
-            parsed = this.CMD_NOTE + "" + data.output + "," + data.step + "," + data.val + "," + ((data.enabled) ? "1" : "0") + "\n";
+            parsed = this.CMD_NOTE + "" + data.output + "," + data.step + "," + data.val + "\n";
         } else if ( data.gate != null ) {
             parsed = this.CMD_GATE + "" + data.gate + "\n";
         } else if ( data.shmode != null ) {
             parsed = this.CMD_SHMOD + ((data.shmode=="follow") ? "1" : "0") + "\n";
+        } else if ( data.reset != null ) {
+            parsed = this.CMD_STRST + data.reset + "," + ((data.val==true) ? "1" : "0") + "\n";
         }
         return parsed;
     },
@@ -331,6 +343,7 @@ microControllerSerial.prototype = {
     sendToDevice : function(data, callback) {
         if ( this.device != null ) {
             let that = this;
+            console.log("Sending data to device: " + data);
             this.device.write(data, function(err, res) {
                 that.device.drain(function(err, res) {
                     callback(err);
@@ -411,7 +424,38 @@ microControllerSim.prototype = {
         this.offsetMult = 2;
         this.maxSteps = 16;
         this.resets = new Array(this.maxSteps);
+        this.resets[this.maxSteps-1] = true;
         this.step = 0;
+    },
+    list: function() {
+        var theList = ["/dev/asdf (a device when there is no device)", "/dev/cu.usbmodemxxx (Arduino (www.arduino.cc)) **"];
+        this.parent.window.webContents.send( "on-update", { list: theList } );
+    },
+    dump: function() {
+        var settings = {
+            mode: "seq",
+            speed: 1200,
+            gatewidth: 57,
+            steps : [
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: true}
+            ]
+        };
+        this.parent.window.webContents.send( "on-update", { settings: settings } );
     },
     getInfoData : function() {
         return { name: "BLEquencer - Hardware Simulator", version: "6.6.6", "features": "BLE" };
@@ -448,7 +492,7 @@ microControllerSim.prototype = {
         this.play();
     },
     next: function() {
-        if ( (this.resets[this.step] == true) || (this.step >= this.maxSteps) ) {
+        if ( (this.resets[this.step] == true) || (this.step >= (this.maxSteps-1)) ) {
             this.step = 0;
         } else {
             this.step++;
@@ -494,9 +538,12 @@ microControllerSim.prototype = {
             var bpm = this.updateInternals(data.speed, data.multiplier);
             this.parent.window.webContents.send( "on-update", { bpm: bpm  } );
         }
-        if ( data.resets ) {
-            this.resets = data.resets;
-            console.log( "microControllerSim - reset array change - value: " + data.resets);
+        if ( data.reset ) {
+            var step = data.reset;
+            if (step < this.maxSteps-1) {
+                this.resets[step] = data.val;
+                console.log( "microControllerSim - reset array change - value: " + this.resets);
+            }
         }
     },
     sendRawData : function(data) {

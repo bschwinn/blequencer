@@ -57,7 +57,7 @@ void handleCmd(int cmd, int args[]) {
       break;
     case SerialCommander::CMD_NOTE:
       commander.sendNoteUpdate(args[1], args[2]);
-      seq.setNote(args[0], args[1], args[2], args[3]==1);
+      seq.setNote(args[0], args[1], args[2]);
       break;
     case SerialCommander::CMD_PLAY:
       seq.play();
@@ -94,6 +94,15 @@ void handleCmd(int cmd, int args[]) {
     case SerialCommander::CMD_SHMOD:
       seq.setSampleHoldMode(args[0]==1);
       lcd.setSampleHoldMode(args[0]==1);
+      break;
+    case SerialCommander::CMD_DUMP:
+      seq.setSampleHoldMode(args[0]==1);
+      break;
+    case SerialCommander::CMD_STRST:
+      seq.setStepReset(args[0], args[1]==1);
+      break;
+    case SerialCommander::CMD_STENB:
+      seq.setStepEnabled(args[0], args[1]==1);
       break;
   }
 }

@@ -42,7 +42,10 @@ public:
     static const int CMD_MODE  = 11;
     static const int CMD_GATE  = 12;
     static const int CMD_SHMOD = 13; // sample/hold mode
-
+    static const int CMD_DUMP  = 14; // dump all internal settings/state
+    static const int CMD_STRST = 15; // reset toggle for a step
+    static const int CMD_STENB = 16; // mute toggle for a step
+    
     static const int CMD_UNDEF = 99;
 
 private:

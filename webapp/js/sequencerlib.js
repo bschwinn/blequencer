@@ -58,6 +58,9 @@ sequencerContainer.prototype = {
     list: function() {
         this.sendEvent("list");
     },
+    dump: function() {
+        this.sendEvent("dump");
+    },
     start: function() {
         this.sendEvent("play");
     },
@@ -284,6 +287,7 @@ fakeContainer.prototype = {
         this.offsetMult = 2;
         this.maxSteps = 16;
         this.resets = new Array(this.maxSteps);
+        this.resets[this.maxSteps-1] = true;
         this.timer = null;
         this.step = 0;
     },
@@ -300,6 +304,9 @@ fakeContainer.prototype = {
                 break;
             case "list" :
                 this.list();
+                break;
+            case "dump" :
+                this.dump();
                 break;
             case "play" :
                 this.play();
@@ -334,6 +341,32 @@ fakeContainer.prototype = {
         var theList = ["/dev/asdf (a device when there is no device)", "/dev/cu.usbmodemxxx (Arduino (www.arduino.cc)) **"];
         window.setTimeout(function(){ window.__containee.onUpdate( { list: theList } ); }, 10);
     },
+    dump: function() {
+        var settings = {
+            mode: "seq",
+            speed: 1200,
+            gatewidth: 57,
+            steps : [
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: false},
+                {v1: 3200, v2: 2400, enabled: true, reset: false},
+                {v1: 2400, v2: 3200, enabled: true, reset: true}
+            ]
+        };
+        window.setTimeout(function(){ window.__containee.onUpdate( { settings: settings } ); }, 10);
+    },
     play: function() {
         that = this;
         if ( this.timer == null) {
@@ -363,7 +396,7 @@ fakeContainer.prototype = {
         this.play();
     },
     next: function() {
-        if ( (this.resets[this.step] == true) || (this.step >= this.maxSteps) ) {
+        if ( (this.resets[this.step] == true) || (this.step >= (this.maxSteps-1)) ) {
             this.step = 0;
         } else {
             this.step++;
@@ -422,9 +455,12 @@ fakeContainer.prototype = {
         if ( data.level != null ) {
             console.log( "FakeContainer - output change - value: " + data.level);
         }
-        if ( data.resets ) {
-            this.resets = data.resets;
-            console.log( "FakeContainer - reset array change - value: " + data.resets);
+        if ( data.reset ) {
+            var step = data.reset;
+            if (step < this.maxSteps-1) {
+                this.resets[step] = data.val;
+                console.log( "FakeContainer - reset array change - value: " + this.resets);
+            }
         }
     },
     updateInternals: function(speed, mult) {

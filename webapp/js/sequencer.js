@@ -96,6 +96,10 @@ seqCont.addDataHandler( function(data) {
 			updateConsole(' - ' + data.list[i], false);
 		}
 	}
+	if ( data.settings != null ) {
+		updateConsole("Device Settings:")
+		updateConsole(JSON.stringify(data.settings), false);
+	}
 });
 seqCont.addErrorHandler( function(data) {
     console.error(data);
@@ -190,20 +194,23 @@ handleArpStepSlider = function(idx, val, onoff) {
 // visually disable all steps after the first reset
 // pass step reset up to container
 handleStepReset = function(idx, val) {
-	resets[idx] = val;
-	seqCont.sendData( { resets: resets } );
+	// prevent turning off step 16
+	if (idx < numberOfSteps-1) {
+		resets[idx] = val;
+		seqCont.sendData( { reset: idx, val: val } );
 
-	var anyResets = false;
-	for ( var i=0; i<resets.length; i++ ) {
-		if ( !anyResets ) {
-			$('#step_'+i+' .seqStep').removeClass('disabled');
-			$('#arpstep_'+i+' .seqStep').removeClass('disabled');
-		} else {
-			$('#step_'+i+' .seqStep').addClass('disabled');
-			$('#arpstep_'+i+' .seqStep').addClass('disabled');
-		}
-		if ( resets[i] == true ) {
-			anyResets = true;
+		var anyResets = false;
+		for ( var i=0; i<resets.length; i++ ) {
+			if ( !anyResets ) {
+				$('#step_'+i+' .seqStep').removeClass('disabled');
+				$('#arpstep_'+i+' .seqStep').removeClass('disabled');
+			} else {
+				$('#step_'+i+' .seqStep').addClass('disabled');
+				$('#arpstep_'+i+' .seqStep').addClass('disabled');
+			}
+			if ( resets[i] == true ) {
+				anyResets = true;
+			}
 		}
 	}
 }
@@ -575,6 +582,18 @@ initConsole = function() {
 	});
 	$('#seqConsoleList').click(function(){
 		seqCont.list();
+	});
+	$('#seqConsoleDump').click(function(){
+		seqCont.dump();
+	});
+	$('#seqConsoleReconnect').click(function(){
+		var dev = $('#seqConsoleRequest').val();
+		if ( dev != null && dev.indexOf('/dev') == 0 ) {
+			console.log("Attempting to reconnect to: " + dev);			
+		} else {
+			// TODO show invalid device warning in UI
+			console.log("Bad/Missing device, please specify a device to connect to of the form /dev/xxx");
+		}
 	});
 	// console launcher
 	$('#sequencerVersion').dblclick(function(){

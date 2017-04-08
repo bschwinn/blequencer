@@ -12,7 +12,7 @@
 
 BLEquencer::BLEquencer(void (*callback)(int, int, int)) {
     // defauls/initialization
-    _running = false;
+    _runStatus = STATUS_STOPPED;
     _bpm = 60;
     _noiseEnabled = false;
     _noiseSeed = 0x55aa55aaL;
@@ -92,15 +92,15 @@ void BLEquencer::begin(int noisePin, int gatePin, int triggerPin, int inputGateP
 /* control functions */
 
 void BLEquencer::play() {
-    _running = true;
+    _runStatus = STATUS_RUNNING;
 }
 
 void BLEquencer::pause() {
-    _running = false;
+    _runStatus = STATUS_PAUSED;
 }
 
 void BLEquencer::stop() {
-    _running = false;
+    _runStatus = STATUS_STOPPED;
     _step = this->_getFirstReset();
     _prevNote = 0;
     // generate a beat event (but don't play)
@@ -115,7 +115,7 @@ void BLEquencer::reset() {
 }
 
 void BLEquencer::next() {
-    if ( (_resets[_step]) || (_step >= MAX_STEPS) ) {
+    if ( (_resets[_step]) || (_step >= (MAX_STEPS-1)) ) {
         _step = 0;
     } else {
         _step++;
@@ -136,18 +136,29 @@ void BLEquencer::setSpeed(float bpm) {
     _bpm = bpm;
 }
 
-void BLEquencer::setNote(int output, int step, int val, bool enabled) {
-    int theVal = val;
-    // cheap way to disable
-    if ( !enabled) {
-        theVal = -1;
-    }
+void BLEquencer::setNote(int output, int step, int val) {
     if ( step < MAX_STEPS ) {
         if ( output == 1 ) {
-            _notes[step] = theVal;
+            _notes[step] = val;
         } else if ( output == 2 ) {
-            _notes2[step] = theVal;
+            _notes2[step] = val;
         }
+    }
+    // update the DAC outputs if the sequencer is paused on this step
+    if ( _runStatus == STATUS_PAUSED && step == _step ) {
+        this->_updateDACs(step);
+    }
+}
+
+void BLEquencer::setStepReset(int step, bool reset) {
+    if ( step < MAX_STEPS ) {
+        _resets[step] = reset;
+    }
+}
+
+void BLEquencer::setStepEnabled(int step, bool enabled) {
+    if ( step < MAX_STEPS ) {
+        // TODO !!!!!!
     }
 }
 
@@ -225,7 +236,7 @@ void BLEquencer::update() {
     }
     
     // sequencer note timing
-    if ( _running ) {
+    if ( _runStatus == STATUS_RUNNING ) {
         if ((currMillis - _prevNote) > beat) {
             _prevNote = currMillis;
             this->next();
@@ -330,6 +341,17 @@ void BLEquencer::_playStep(int step) {
     if (!_arpEnabled) {
         this->_gateHigh();
         _prevGate = micros();
+    }
+    // update the DAC outputs
+    this->_updateDACs(step);
+    
+    // generate a beat "event"
+    onBeat(step, _notes[step], _notes2[step]);
+}
+
+void BLEquencer::_updateDACs(int step) {
+    // only generate a gate in sequencer mode
+    if (!_arpEnabled) {
         _dac1.setVoltage(_notes[step], false);
     } else {
         // in arp mode, calculate the note modifier
@@ -337,7 +359,4 @@ void BLEquencer::_playStep(int step) {
         _dac1.setVoltage(modify, false);
     }
     _dac2.setVoltage(_notes2[step], false);
-    
-    // generate a beat "event"
-    onBeat(step, _notes[step], _notes2[step]);
 }

@@ -79,7 +79,7 @@ void SerialCommander::parseSerialLine() {
 }
 
 void SerialCommander::parseSerialCommand(int cmd, const char args[LINE_LENGTH-1]) {
-    if ( cmd < CMD_BPM || cmd > CMD_SHMOD ) {
+    if ( cmd < CMD_BPM || cmd > CMD_STENB ) {
         Serial.print("SerialCommanderError(unknown) cmd: ");
         Serial.print(cmd);
         Serial.print(", data: ");
