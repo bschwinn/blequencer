@@ -95,14 +95,35 @@ void handleCmd(int cmd, int args[]) {
       seq.setSampleHoldMode(args[0]==1);
       lcd.setSampleHoldMode(args[0]==1);
       break;
-    case SerialCommander::CMD_DUMP:
-      seq.setSampleHoldMode(args[0]==1);
-      break;
     case SerialCommander::CMD_STRST:
       seq.setStepReset(args[0], args[1]==1);
       break;
     case SerialCommander::CMD_STENB:
       seq.setStepEnabled(args[0], args[1]==1);
+      break;
+    case SerialCommander::CMD_DUMP:
+      Serial.print("conf ");
+      Serial.print(seq.getArpMode());
+      Serial.print(',');
+      Serial.print(seq.getSampleHoldMode());
+      Serial.print(',');
+      Serial.print(seq.getNoise());
+      Serial.print(',');
+      Serial.print(seq.getNoiseColor());
+      Serial.print(',');
+      Serial.print((int)(seq.getSpeed()*10));
+      Serial.print(',');
+      Serial.println(seq.getGateWidth());
+      for( int i=0; i<16; i++ ) {
+        Serial.print("stcnf ");
+        Serial.print(i);
+        Serial.print(',');
+        Serial.print(seq.getStepNote(i, 1));
+        Serial.print(',');
+        Serial.print(seq.getStepNote(i, 2));
+        Serial.print(',');
+        Serial.println(seq.getStepReset(i));
+      }
       break;
   }
 }

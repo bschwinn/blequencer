@@ -210,6 +210,25 @@ int BLEquencer::getGateWidth() {
     return _gateWidth;
 }
 
+int BLEquencer::getStepNote(int step, int bank) {
+    if ( step < MAX_STEPS ) {
+        if ( bank == 1 ) {
+            return _notes[step];
+        } else if ( bank == 2 ) {
+            return _notes2[step];
+        }
+    }
+    return 0;
+}
+
+bool BLEquencer::getStepReset(int step) {
+    if ( step < MAX_STEPS ) {
+        return _resets[step];
+    }
+    return false;
+}
+
+
 // TODO - deal with micro second roll-over??!!?  70 minutes is quite some time, but the trigger/gate would be stuck
 void BLEquencer::update() {
     // ARP MODE - scan/debounce input gate and start/stop accordingly

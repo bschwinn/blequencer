@@ -131,8 +131,8 @@ microControllerSerial.prototype = {
         this.CMD_GATE  = "<";  // val (5-95)
         this.CMD_SHMOD = "=";  // bool
         this.CMD_DUMP  = ">";  // no args
-        this.CMD_STRST = "?";
-        this.CMD_STENB = "@";
+        this.CMD_STRST = "?";  // step, bool
+        this.CMD_STENB = "@";  // step, bool
     },
     init : function(config) {
         this.speed = config.speed;
@@ -182,7 +182,12 @@ microControllerSerial.prototype = {
                 return { step : parseInt(args[0]) };  // when the step updates
             case "note " :
                 return { note : parseInt(args[0]), val: parseInt(args[1]) };  // note change "echo"
+            case "conf " :
+                return { settings: { mode : parseInt(args[0]), shmode: parseInt(args[1]), noise: parseInt(args[2]), noiseColor: parseInt(args[3]), bpm: parseInt(args[4]), gateWidth: parseInt(args[5]) } };  // sequencer config
+            case "stcnf" :
+                return { stepSettings: {step : parseInt(args[0]), v1: parseInt(args[1]), v2: parseInt(args[2]), reset: parseInt(args[3]) } };
         }
+        console.log("microControllerSerial - data was not parsed: " + data)
         return null;
     },
     shutdown: function() {
@@ -343,7 +348,7 @@ microControllerSerial.prototype = {
     sendToDevice : function(data, callback) {
         if ( this.device != null ) {
             let that = this;
-            console.log("Sending data to device: " + data);
+            console.log("microControllerSerial - sending data to device: " + data);
             this.device.write(data, function(err, res) {
                 that.device.drain(function(err, res) {
                     callback(err);

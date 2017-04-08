@@ -68,6 +68,8 @@ public:
     int   getNoiseColor();
     float getSpeed();
     int   getGateWidth();
+    int   getStepNote(int, int);
+    bool  getStepReset(int);
 
     // called each scan
     void update();

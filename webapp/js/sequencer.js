@@ -100,6 +100,9 @@ seqCont.addDataHandler( function(data) {
 		updateConsole("Device Settings:")
 		updateConsole(JSON.stringify(data.settings), false);
 	}
+	if ( data.stepSettings != null ) {
+		updateConsole(JSON.stringify(data.stepSettings), false);
+	}
 });
 seqCont.addErrorHandler( function(data) {
     console.error(data);
