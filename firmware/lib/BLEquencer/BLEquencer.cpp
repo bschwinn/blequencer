@@ -10,7 +10,7 @@
 
 /* BLE Sequencer */
 
-BLEquencer::BLEquencer(void (*callback)(int)) {
+BLEquencer::BLEquencer(void (*callback)(int, int, int)) {
     // defauls/initialization
     _running = false;
     _bpm = 60;
@@ -37,11 +37,11 @@ BLEquencer::BLEquencer(void (*callback)(int)) {
     _notes[8] = tonic;
     _notes[9] = major3rd;
     _notes[10] = fifth;
-    _notes[11] = major7th;
-    _notes[12] = octave;
-    _notes[13] = major7th;
+    _notes[11] = octave;
+    _notes[12] = tonic;
+    _notes[13] = major3rd;
     _notes[14] = fifth;
-    _notes[15] = major3rd;
+    _notes[15] = octave;
     
     _notes2[0] = 511;
     _notes2[1] = 1023;
@@ -105,7 +105,7 @@ void BLEquencer::stop() {
     _prevNote = 0;
     // generate a beat event (but don't play)
     // fake being on first step when we're really on the last
-    onBeat(0);
+    onBeat(0, _notes[0], _notes2[0]);
     this->_gateLow();
 }
 
@@ -143,9 +143,9 @@ void BLEquencer::setNote(int output, int step, int val, bool enabled) {
         theVal = -1;
     }
     if ( step < MAX_STEPS ) {
-        if ( output == 0 ) {
+        if ( output == 1 ) {
             _notes[step] = theVal;
-        } else if ( output == 1 ) {
+        } else if ( output == 2 ) {
             _notes2[step] = theVal;
         }
     }
@@ -326,14 +326,18 @@ void BLEquencer::_playStep(int step) {
     // always trigger since this is a clock pulse for the sequencer
     this->_triggerHigh();
     _prevTrigger = micros();
-    // only generate a gate in sequencer mode, arp mode doesn't generate gates, it reacts to them
+    // only generate a gate in sequencer mode
     if (!_arpEnabled) {
         this->_gateHigh();
         _prevGate = micros();
+        _dac1.setVoltage(_notes[step], false);
+    } else {
+        // in arp mode, calculate the note modifier
+        int modify = _notes[step]*SEMI_TONE;
+        _dac1.setVoltage(modify, false);
     }
-    // generate a beat "event" so the DACs can be zero'ed
-    _dac1.setVoltage(_notes[step], false);
     _dac2.setVoltage(_notes2[step], false);
-
-    onBeat(step);
+    
+    // generate a beat "event"
+    onBeat(step, _notes[step], _notes2[step]);
 }

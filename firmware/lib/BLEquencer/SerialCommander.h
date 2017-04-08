@@ -15,34 +15,33 @@
 class SerialCommander {
 
     static const int LINE_LENGTH = 32;
-    static const int CMD_LENGTH = 5;
     static const int ARG_LENGTH = 5;
     static const char LINE_END = '\n';
     
     
 public:
-    SerialCommander(void (*callback)(int, const int[ARG_LENGTH]), void (*errcallback)(const char[CMD_LENGTH+1], const char[LINE_LENGTH-CMD_LENGTH-1]));
+    SerialCommander(void (*callback)(int, const int[ARG_LENGTH]), void (*errcallback)(int, const char[LINE_LENGTH-1]));
     
     // called each scan
     void begin(uint16_t);
     void update();
     void sendSpeedUpdate(int);
-    void sendStepUpdate(int);
+    void sendStepUpdate(int, int, int);
     void sendNoteUpdate(int, int);
 
-    static const int CMD_BPM   = 0;
-    static const int CMD_PLAY  = 1;
-    static const int CMD_PAUSE = 2;
-    static const int CMD_STOP  = 3;
-    static const int CMD_RESET = 4;
-    static const int CMD_NEXT  = 5;
-    static const int CMD_PREV  = 6;
-    static const int CMD_NOTE  = 7;
-    static const int CMD_NOISE = 8;
-    static const int CMD_NZCOL = 9; // noise color
-    static const int CMD_MODE  = 10;
-    static const int CMD_GATE  = 11;
-    static const int CMD_SHMOD = 12; // sample/hold mode
+    static const int CMD_BPM   = 1;
+    static const int CMD_PLAY  = 2;
+    static const int CMD_PAUSE = 3;
+    static const int CMD_STOP  = 4;
+    static const int CMD_RESET = 5;
+    static const int CMD_NEXT  = 6;
+    static const int CMD_PREV  = 7;
+    static const int CMD_NOTE  = 8;
+    static const int CMD_NOISE = 9;
+    static const int CMD_NZCOL = 10; // noise color
+    static const int CMD_MODE  = 11;
+    static const int CMD_GATE  = 12;
+    static const int CMD_SHMOD = 13; // sample/hold mode
 
     static const int CMD_UNDEF = 99;
 
@@ -52,11 +51,11 @@ private:
     bool _throttling; // currently throttling the serial line with xon/xoff
     void parseSerialLine();
     void checkBuffer();
-    void parseSerialCommand(const char[CMD_LENGTH+1], const char[LINE_LENGTH-CMD_LENGTH-1]);
+    void parseSerialCommand(int, const char[LINE_LENGTH-1]);
 
     // callback for each command recieved
     void (*onCommand)(int, int[ARG_LENGTH]);
-    void (*onCommandError)(const char[CMD_LENGTH+1], const char[LINE_LENGTH-CMD_LENGTH-1]);
+    void (*onCommandError)(int, const char[LINE_LENGTH-1]);
 };
 
 #endif /* SerialCommander_h */

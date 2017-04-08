@@ -10,7 +10,7 @@
 
 // TODO protocol - should we use a single byte for the command?
 
-SerialCommander::SerialCommander(void (*callback)(int, const int[ARG_LENGTH]), void (*errcallback)(const char[CMD_LENGTH+1], const char[LINE_LENGTH-CMD_LENGTH-1])) {
+SerialCommander::SerialCommander(void (*callback)(int, const int[ARG_LENGTH]), void (*errcallback)(int, const char[LINE_LENGTH-1])) {
     onCommand = callback;
     onCommandError = errcallback;
 }
@@ -63,63 +63,23 @@ void SerialCommander::checkBuffer() {
 
 
 void SerialCommander::parseSerialLine() {
-    char cmd[CMD_LENGTH+1]; // char buffer for command
-    char args[LINE_LENGTH-CMD_LENGTH-1]; // char buffer for data
+    char args[LINE_LENGTH-1]; // char buffer for data
     int argsLen = 0;
+    int cmd = 0;
     for (int i = 0; i < strlen(_rcvdChars); i++ ) {
-        if ( i < CMD_LENGTH ) {
-            cmd[i] = _rcvdChars[i];
+        if ( i == 0 ) {
+            cmd = _rcvdChars[i]-48;  // this is crap but we're packing the protocol
         } else {
-            args[i-CMD_LENGTH] = _rcvdChars[i];
+            args[i-1] = _rcvdChars[i];
             argsLen++;
         }
     }
-    cmd[5] = '\0';
     args[argsLen] = '\0';
     this->parseSerialCommand(cmd, args);
 }
 
-// The main command parsing routine, parses serial commands like these:
-// ex: step change command sets _notes2[15] = 2048 (enabled)
-// note 1,15,2048,1
-// ex: step change command sets _notes[11] = 4095 (disabled)
-// note 0,11,4095,0
-// ex: reset at step 5 on
-// stpre5,1
-// ex: reset at step 5 off
-// stpre5,0
-// ex: set bpm to 88.9
-// bpm  889
-void SerialCommander::parseSerialCommand(const char cmd[CMD_LENGTH+1], const char args[LINE_LENGTH-CMD_LENGTH+1]) {
-    // parse command
-    int serCmd;
-    if ( strcmp(cmd, "bpm  ") == 0 ) {
-        serCmd = CMD_BPM;
-    } else if ( strcmp(cmd, "note ") == 0 ) {
-        serCmd = CMD_NOTE;
-    } else if ( strcmp(cmd, "play ") == 0 ) {
-        serCmd = CMD_PLAY;
-    } else if ( strcmp(cmd, "pause") == 0 ) {
-        serCmd = CMD_PAUSE;
-    } else if ( strcmp(cmd, "stop ") == 0 ) {
-        serCmd = CMD_STOP;
-    } else if ( strcmp(cmd, "reset") == 0 ) {
-        serCmd = CMD_RESET;
-    } else if ( strcmp(cmd, "next ") == 0 ) {
-        serCmd = CMD_NEXT;
-    } else if ( strcmp(cmd, "prev ") == 0 ) {
-        serCmd = CMD_PREV;
-    } else if ( strcmp(cmd, "noise") == 0 ) {
-        serCmd = CMD_NOISE;
-    } else if ( strcmp(cmd, "nzcol") == 0 ) {
-        serCmd = CMD_NZCOL;
-    } else if ( strcmp(cmd, "mode ") == 0 ) {
-        serCmd = CMD_MODE;
-    } else if ( strcmp(cmd, "gate ") == 0 ) {
-        serCmd = CMD_GATE;
-    } else if ( strcmp(cmd, "shmo ") == 0 ) {
-        serCmd = CMD_SHMOD;
-    } else {
+void SerialCommander::parseSerialCommand(int cmd, const char args[LINE_LENGTH-1]) {
+    if ( cmd < CMD_BPM || cmd > CMD_SHMOD ) {
         Serial.print("SerialCommanderError(unknown) cmd: ");
         Serial.print(cmd);
         Serial.print(", data: ");
@@ -144,7 +104,7 @@ void SerialCommander::parseSerialCommand(const char cmd[CMD_LENGTH+1], const cha
     }
 
     // publish command event with parsed command/args
-    onCommand(serCmd,serArgs);
+    onCommand(cmd,serArgs);
 }
 
 void SerialCommander::sendSpeedUpdate(int bpm) {
@@ -152,9 +112,13 @@ void SerialCommander::sendSpeedUpdate(int bpm) {
     Serial.println(bpm);
 }
 
-void SerialCommander::sendStepUpdate(int step) {
+void SerialCommander::sendStepUpdate(int step, int v1, int v2) {
     Serial.print("step ");
-    Serial.println(step);
+    Serial.print(step);
+    Serial.print(',');
+    Serial.print(v1);
+    Serial.print(',');
+    Serial.println(v2);
 }
 
 void SerialCommander::sendNoteUpdate(int step, int val) {

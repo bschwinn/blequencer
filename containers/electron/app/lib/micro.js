@@ -113,6 +113,19 @@ microControllerSerial.prototype = {
         this.baudRate = 9600;
         this.writing = false;
         this.throttleTime = 33;
+        this.CMD_BPM   = "1";
+        this.CMD_PLAY  = "2";
+        this.CMD_PAUSE = "3";
+        this.CMD_STOP  = "4";
+        this.CMD_RESET = "5";
+        this.CMD_NEXT  = "6";
+        this.CMD_PREV  = "7";
+        this.CMD_NOTE  = "8";
+        this.CMD_NOISE = "9";
+        this.CMD_NZCOL = ":"; // the following are crap but we're packing the protocol
+        this.CMD_MODE  = ";";
+        this.CMD_GATE  = "<";
+        this.CMD_SHMOD = "=";
     },
     init : function(config) {
         this.speed = config.speed;
@@ -193,28 +206,28 @@ microControllerSerial.prototype = {
         });
     },
     play : function() {
-        this.sendRawData("play \n");
+        this.sendRawData(this.CMD_PLAY+"\n");
     },
     stop : function() {
-        this.sendRawData("stop \n");
+        this.sendRawData(this.CMD_STOP+"\n");
     },
     pause : function() {
-        this.sendRawData("pause\n");
+        this.sendRawData(this.CMD_PAUSE+"\n");
     },
     reset : function() {
-        this.sendRawData("reset\n");
+        this.sendRawData(this.CMD_RESET+"\n");
     },
     next : function() {
-        this.sendRawData("next \n");
+        this.sendRawData(this.CMD_NEXT+"\n");
     },
     prev : function() {
-        this.sendRawData("prev \n");
+        this.sendRawData(this.CMD_PREV+"\n");
     },
     setNoise : function(noise) {
-        this.sendRawData("noise" + (noise? "1" : "0") + "\n");
+        this.sendRawData(this.CMD_NOISE + (noise? "1" : "0") + "\n");
     },
     setNoiseColor : function(col) {
-        this.sendRawData("nzcol" + col + "\n");
+        this.sendRawData(this.CMD_NZCOL + col + "\n");
     },
     sendRawData : function(data) {
         if ( this.writing ) {
@@ -277,15 +290,15 @@ microControllerSerial.prototype = {
         // parse speed params into a serial message
         if ( (data.speed != null) || (data.multiplier != null) ) {
             var bpm = this.updateInternals(data.speed, data.multiplier);
-            parsed = "bpm  " + parseInt( bpm.toFixed(1) * 10) + "\n"; // multiply by 10 so the protocol only deals with integers
+            parsed = this.CMD_BPM + "" + parseInt( bpm.toFixed(1) * 10) + "\n"; // multiply by 10 so the protocol only deals with integers
         } else if ( data.mode != null ) {
-            parsed = "mode " + ((data.mode=="arp") ? 1 : 0) + "\n";
+            parsed = this.CMD_MODE + ((data.mode=="arp") ? "1" : "0") + "\n";
         } else if ( data.output != null && data.step != null ) {
-            parsed = "note " + data.output + "," + data.step + "," + data.val + "," + ((data.enabled) ? "1" : "0") + "\n";
+            parsed = this.CMD_NOTE + "" + data.output + "," + data.step + "," + data.val + "," + ((data.enabled) ? "1" : "0") + "\n";
         } else if ( data.gate != null ) {
-            parsed = "gate " + data.gate + "\n";
+            parsed = this.CMD_GATE + "" + data.gate + "\n";
         } else if ( data.shmode != null ) {
-            parsed = "shmo " + ((data.shmode=="follow") ? 1 : 0) + "\n";
+            parsed = this.CMD_SHMOD + ((data.shmode=="follow") ? "1" : "0") + "\n";
         }
         return parsed;
     },

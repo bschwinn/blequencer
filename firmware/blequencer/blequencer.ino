@@ -7,7 +7,7 @@
 #define THEBAUD 9600
 
 // beats and commands handler funcs (see impl below)
-void handleBeat(int);
+void handleBeat(int, int, int);
 void handleCmd(int, int[]);
 void handleCmdError(char[], char[]);
 void handleVoltage(float);
@@ -41,8 +41,8 @@ void loop() {
 }
 
 // sequencer beat handler - update dacs and generate a "beat" event to the serial port
-void handleBeat(int _step) {
-  commander.sendStepUpdate(_step);
+void handleBeat(int _step, int val1, int val2) {
+  commander.sendStepUpdate(_step, val1, val2);
 }
 
 // command handler - issue sequencer command, update serial when necessary

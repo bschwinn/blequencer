@@ -17,7 +17,7 @@
 /* BLE Sequencer */
 
 #define MAX_STEPS 16
-
+#define SEMI_TONE 67
 #define tonic 0
 #define minor2nd 67
 #define major2nd 134
@@ -36,7 +36,7 @@
 class BLEquencer {
 
 public:
-    BLEquencer(void (*callback)(int));
+    BLEquencer(void (*callback)(int, int, int));
 
     void begin(int, int, int, int, int, int, int);
 
@@ -67,7 +67,7 @@ public:
     void update();
 
     // callback for each beat of the sequencer
-    void (*onBeat)(int);
+    void (*onBeat)(int, int, int);
     
 private:
 
