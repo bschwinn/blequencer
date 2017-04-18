@@ -73,6 +73,22 @@ var SHMODE_NORMAL = 0;
 var SHMODE_FOLLOW = 1;
 var selectedSHMode = SHMODE_NORMAL;
 
+// global function for container to register itself
+// iOS needs a wrapper, OSX injects an implementation
+window.__registerContainer = function(os) {
+    if ( os == 'iOS' ) {
+        seqCont.wireContainer( new iOSContainer() );
+    } else if ( os == 'OSX' ) {
+        seqCont.wireContainer( window.__container );
+    } else if ( os == 'fake' ) {
+        seqCont.wireContainer( new fakeContainer() );
+    } else {
+        console.log("Error: unrecognized container.");
+        return;
+    }
+}
+
+
 // initialize container
 var seqConf = { speed: masterSpeed, multiplier: 1, range: 200, offset: 50 };
 var seqCont = new sequencerContainer(seqConf);
@@ -108,22 +124,6 @@ seqCont.addErrorHandler( function(data) {
     console.error(data);
 	updateConsole(data, true);
 });
-
-// global function for container to register itself
-// iOS needs a wrapper, OSX injects an implementation
-window.__registerContainer = function(os) {
-    if ( os == 'iOS' ) {
-        seqCont.wireContainer( new iOSContainer() );
-    } else if ( os == 'OSX' ) {
-        seqCont.wireContainer( window.__container );
-    } else if ( os == 'fake' ) {
-        seqCont.wireContainer( new fakeContainer() );
-    } else {
-        console.log("Error: unrecognized container.");
-        return;
-    }
-}
-
 
 // start/stop/pause the sequencer
 seqStart = function() {
@@ -166,7 +166,7 @@ handleSpeedSlider = function(values, handle, unencoded) {
 // speed slider handling
 handleGateSlider = function(values, handle, unencoded) {
 	gateWidth = parseInt(values[handle]);
-	$('#gateWidth').text(gateWidth + '%');
+	document.querySelector('#gateWidth').innerText = gateWidth + '%';
 	seqCont.sendData( { gate: gateWidth } );
 }
 // output voltage slider handling
@@ -205,11 +205,11 @@ handleStepReset = function(idx, val) {
 		var anyResets = false;
 		for ( var i=0; i<resets.length; i++ ) {
 			if ( !anyResets ) {
-				$('#step_'+i+' .seqStep').removeClass('disabled');
-				$('#arpstep_'+i+' .seqStep').removeClass('disabled');
+				document.querySelector('#step_'+i+' .seqStep').classList.remove('disabled');
+				document.querySelector('#arpstep_'+i+' .seqStep').classList.remove('disabled');
 			} else {
-				$('#step_'+i+' .seqStep').addClass('disabled');
-				$('#arpstep_'+i+' .seqStep').addClass('disabled');
+				document.querySelector('#step_'+i+' .seqStep').classList.add('disabled');
+				document.querySelector('#arpstep_'+i+' .seqStep').classList.add('disabled');
 			}
 			if ( resets[i] == true ) {
 				anyResets = true;
@@ -254,7 +254,7 @@ setSHMode = function(shmode) {
 }
 // bpm data handler (from the sequencer)
 updateBPM = function(bpm) {
-	$('#seqBPM').text(bpm.toFixed(1));
+	document.querySelector('#seqBPM').innerText = bpm.toFixed(1);
 }
 
 // update step values/toggles (useful for changing banks)
@@ -274,28 +274,28 @@ updateStepValues = function() {
 updateStepDisplay = function() {
 	if ( selectedMode == MODE_ARP ) {
 		if ( selectedBank == BANK_2 ) {
-			$('#sequenceRow1').show();
-			$('#sequenceRow2').show();
-			$('#arpRow1').hide();
-			$('#arpRow2').hide();
+			document.querySelector('#sequenceRow1').style.display = 'block';
+			document.querySelector('#sequenceRow2').style.display = 'block'
+			document.querySelector('#arpRow1').style.display = 'none'
+			document.querySelector('#arpRow2').style.display = 'none'
 		} else {
-			$('#sequenceRow1').hide();
-			$('#sequenceRow2').hide();
-			$('#arpRow1').show();
-			$('#arpRow2').show();
+			document.querySelector('#sequenceRow1').style.display = 'none'
+			document.querySelector('#sequenceRow2').style.display = 'none'
+			document.querySelector('#arpRow1').style.display = 'block';
+			document.querySelector('#arpRow2').style.display = 'block';
 		}
 	} else {
-		$('#sequenceRow1').show();
-		$('#sequenceRow2').show();
-		$('#arpRow1').hide();
-		$('#arpRow2').hide();
+		document.querySelector('#sequenceRow1').style.display = 'block';
+		document.querySelector('#sequenceRow2').style.display = 'block';
+		document.querySelector('#arpRow1').style.display = 'none'
+		document.querySelector('#arpRow2').style.display = 'none'
 	}
 }
 // update the version number from the container
 updateSeqInfo = function(inf) {
-	$('#sequencerVersion').text(inf.version);
-	$('#sequencerName').attr("title", inf.name);
-	$('#sequencerStatus').removeClass('glyphicon-off').addClass('glyphicon-flash')
+	document.querySelector('#sequencerVersion').innerText = inf.version;
+	document.querySelector('#sequencerName').setAttribute("title", inf.name);
+	addRemoveClass('#sequencerStatus', 'glyphicon-flash', 'glyphicon-off');
 }
 // current step handler (from the sequencer)
 updateCurrentStep = function(currStep) {
@@ -309,102 +309,112 @@ updateCurrentStep = function(currStep) {
 // update the transport button states
 updateTransportButtons = function(){
 	if (sequencerState == STATE_PAUSED) {
-		$('#seqPause').removeClass('btn-default').addClass('btn-warning');
-		$('#seqPrev').removeClass('btn-default').addClass('btn-primary');
-		$('#seqNext').removeClass('btn-default').addClass('btn-primary');
-		$('#seqPlay').removeClass('btn-warning').addClass('btn-default');
-		$('#seqStop').removeClass('btn-warning').addClass('btn-default');
+		addRemoveClass('#seqPause', 'btn-warning', 'btn-default');
+		addRemoveClass('#seqPrev', 'btn-primary', 'btn-default');
+		addRemoveClass('#seqNext', 'btn-primary', 'btn-default');
+		addRemoveClass('#seqPlay', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqStop', 'btn-default', 'btn-warning');
+
 	} else if (sequencerState == STATE_PLAYING) {
-		$('#seqPlay').removeClass('btn-default').addClass('btn-warning');
-		$('#seqStop').removeClass('btn-warning').addClass('btn-default');
-		$('#seqPause').removeClass('btn-warning').addClass('btn-default');
-		$('#seqPrev').removeClass('btn-primary').addClass('btn-default');
-		$('#seqNext').removeClass('btn-primary').addClass('btn-default');
+		addRemoveClass('#seqPlay', 'btn-warning', 'btn-default');
+		addRemoveClass('#seqStop', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqPause', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqPrev', 'btn-default', 'btn-primary');
+		addRemoveClass('#seqNext', 'btn-default', 'btn-primary');
 	} else {
-		$('#seqStop').removeClass('btn-default').addClass('btn-warning');
-		$('#seqPause').addClass('btn-default').removeClass('btn-warning');
-		$('#seqPrev').addClass('btn-default').removeClass('btn-primary');
-		$('#seqNext').addClass('btn-default').removeClass('btn-primary');
-		$('#seqPlay').addClass('btn-default').removeClass('btn-warning');
+		addRemoveClass('#seqStop', 'btn-warning', 'btn-default');
+		addRemoveClass('#seqPause', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqPrev', 'btn-default', 'btn-primary');
+		addRemoveClass('#seqNext', 'btn-default', 'btn-primary');
+		addRemoveClass('#seqPlay', 'btn-default', 'btn-warning');
 	}
 }
 // update the speed mult button states
 updateSpeedButtons = function(){
 	if (multiplier == SPEED_MULT_HALF) {
-		$('#seqSpeedHalf').addClass('btn-warning').removeClass('btn-default');
-		$('#seqSpeed1X').removeClass('btn-warning').addClass('btn-default');
-		$('#seqSpeed2X').removeClass('btn-warning').addClass('btn-default');
+		addRemoveClass('#seqSpeedHalf', 'btn-warning', 'btn-default');
+		addRemoveClass('#seqSpeed1X', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqSpeed2X', 'btn-default', 'btn-warning');
 	} else if (multiplier == SPEED_MULT_2X) {
-		$('#seqSpeedHalf').removeClass('btn-warning').addClass('btn-default');
-		$('#seqSpeed1X').removeClass('btn-warning').addClass('btn-default');
-		$('#seqSpeed2X').addClass('btn-warning').removeClass('btn-default');
+		addRemoveClass('#seqSpeedHalf', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqSpeed1X', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqSpeed2X', 'btn-warning', 'btn-default');
 	} else {
-		$('#seqSpeedHalf').removeClass('btn-warning').addClass('btn-default');
-		$('#seqSpeed1X').addClass('btn-warning').removeClass('btn-default');
-		$('#seqSpeed2X').removeClass('btn-warning').addClass('btn-default');
+		addRemoveClass('#seqSpeedHalf', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqSpeed1X', 'btn-warning', 'btn-default');
+		addRemoveClass('#seqSpeed2X', 'btn-default', 'btn-warning');
 	}
 }
 // update the bank button states
 updateBankButtons = function(){
 	if (selectedBank == BANK_1) {
-		$('#bank1Selector').removeClass('btn-default').addClass('btn-warning');
-		$('#bank2Selector').removeClass('btn-warning').addClass('btn-default');
+		addRemoveClass('#bank1Selector', 'btn-warning', 'btn-default');
+		addRemoveClass('#bank2Selector', 'btn-default', 'btn-warning');
 	} else { // BANK_2
-		$('#bank1Selector').removeClass('btn-warning').addClass('btn-default');
-		$('#bank2Selector').removeClass('btn-default').addClass('btn-warning');
+		addRemoveClass('#bank1Selector', 'btn-default', 'btn-warning');
+		addRemoveClass('#bank2Selector', 'btn-warning', 'btn-default');
 	}
 }
 // update the selected output (sequencer or arpeggiator)
 updateSelectedMode = function() {
 	if (selectedMode == MODE_ARP) {
-		$('#arpModeSelector').removeClass('btn-default').addClass('btn-warning');
-		$('#seqModeSelector').removeClass('btn-warning').addClass('btn-default');
+		addRemoveClass('#arpModeSelector', 'btn-warning', 'btn-default');
+		addRemoveClass('#seqModeSelector', 'btn-default', 'btn-warning');
 	} else {
-		$('#arpModeSelector').removeClass('btn-warning').addClass('btn-default');
-		$('#seqModeSelector').removeClass('btn-default').addClass('btn-warning');
+		addRemoveClass('#arpModeSelector', 'btn-default', 'btn-warning');
+		addRemoveClass('#seqModeSelector', 'btn-warning', 'btn-default');
 	}
 }
 // update the sample/hold mode buttons (normal or follow)
 updateSelectedSHMode = function() {
 	if (selectedSHMode == SHMODE_NORMAL) {
-		$('#sampHoldNormalSelector').removeClass('btn-default').addClass('btn-warning');
-		$('#sampHoldFollowSelector').removeClass('btn-warning').addClass('btn-default');
+		addRemoveClass('#sampHoldNormalSelector', 'btn-warning', 'btn-default');
+		addRemoveClass('#sampHoldFollowSelector', 'btn-default', 'btn-warning');
 	} else {
-		$('#sampHoldNormalSelector').removeClass('btn-warning').addClass('btn-default');
-		$('#sampHoldFollowSelector').removeClass('btn-default').addClass('btn-warning');
+		addRemoveClass('#sampHoldNormalSelector', 'btn-default', 'btn-warning');
+		addRemoveClass('#sampHoldFollowSelector', 'btn-warning', 'btn-default');
 	}
+}
+
+addRemoveClass = function(selector, add, remove) {
+	var elem = document.querySelector(selector);
+	elem.classList.remove(remove);
+	elem.classList.add(add);
 }
 
 // update the console log
 updateConsole = function(data, isError) {
 	var clazz = isError ? "error" : "";
-	$('#seqConsoleResponse').append('<p class="' + clazz + '">' + data + '</p>');
+	var para = document.createElement('p');
+	para.setAttribute('class', clazz);
+	para.innerText = data;
+	document.querySelector('#seqConsoleResponse').appendChild(para);
 }
 
 // initialize/create the transport buttons
 initTransportButtons = function(){
-	$('#seqStop').click(function() {
+	document.querySelector('#seqStop').addEventListener('click', function(){
 		seqStop();
 	});
-	$('#seqPlay').click(function() {
+	document.querySelector('#seqPlay').addEventListener('click', function(){
 		seqStart();
 	});
-	$('#seqPause').click(function() {
+	document.querySelector('#seqPause').addEventListener('click', function(){
 		seqPause();
 	});
-	$('#seqReset').click(function() {
+	document.querySelector('#seqReset').addEventListener('click', function(){
 		seqReset();
 	});
-	$('#seqPrev').click(function() {
+	document.querySelector('#seqPrev').addEventListener('click', function(){
 		seqPrev();
 	});
-	$('#seqNext').click(function() {
+	document.querySelector('#seqNext').addEventListener('click', function(){
 		seqNext();
 	});
 }
 // initialize/create the speed sliders and buttons
 initSpeedSlider = function(){
-	var slider = $('#speedSlider')[0];
+	var slider = document.querySelector('#speedSlider');
 	noUiSlider.create(slider, {
 		start: 2047,
 		orientation: "vertical",
@@ -422,70 +432,71 @@ initSpeedSlider = function(){
 	slider.noUiSlider.on('slide', handleSpeedSlider);
 }
 initSpeedButtons = function(){
-	$('#seqSpeedHalf').click(function() {
+	document.querySelector('#seqSpeedHalf').addEventListener('click', function(){
 		setMultiplier(SPEED_MULT_HALF);
 	});
-	$('#seqSpeed1X').click(function() {
+	document.querySelector('#seqSpeed1X').addEventListener('click', function(){
 		setMultiplier(SPEED_MULT_1X);
 	});
-	$('#seqSpeed2X').click(function() {
+	document.querySelector('#seqSpeed2X').addEventListener('click', function(){
 		setMultiplier(SPEED_MULT_2X);
 	});
-	$('#seqSpeedTap').click(function() {
+	document.querySelector('#seqSpeedTap').addEventListener('click', function(){
 		seqTap();
 	});
 }
 initBankButtons = function() {
-	$('#bank1Selector').click(function() {
+	document.querySelector('#bank1Selector').addEventListener('click', function(){
 		setBank(BANK_1);
 	});
-	$('#bank2Selector').click(function() {
+	document.querySelector('#bank2Selector').addEventListener('click', function(){
 		setBank(BANK_2);
 	});
 }
 initNoiseButtons = function() {
-	$('#noiseToggle').click(function() {
+	document.querySelector('#noiseToggle').addEventListener('click', function(){
 		noiseEnabled = !noiseEnabled;
 		seqCont.setNoise(noiseEnabled);
 		if ( noiseEnabled ) {
-			$(this).addClass('btn-warning');
+			this.classList.add('btn-warning');
 		} else {
-			$(this).removeClass('btn-warning');
+			this.classList.remove('btn-warning');
 		}
 	});
 
-	$('#noiseColorKnob').potentiometer({
+	var pot = new potentiometer('noiseColorKnob',{
 		value: 0,
 		min: 0,
 		max: 11,
 		height: '32px',
 		width: '32px',
-		turn : function(ratio){
+		rotate : function(ratio){
 			var theVal = ratio * 11;
 			var theDataVal = ratio*500;
-			$('#noiseColorValue').text(theVal.toFixed(1));
+			document.querySelector('#noiseColorValue').innerText = theVal.toFixed(1);
 			seqCont.setNoiseColor(theDataVal.toFixed(0));
 		}
 	});
+	pot.render();
 }
 initModeButtons = function() {
-	$('#arpModeSelector').click(function() {
+	document.querySelector('#arpModeSelector').addEventListener('click', function(){
 		setMode(MODE_ARP);
 	});
-	$('#seqModeSelector').click(function() {
+	document.querySelector('#seqModeSelector').addEventListener('click', function(){
 		setMode(MODE_SEQ);
 	});
 }
 initSampleHoldButtons = function() {
-	$('#sampHoldNormalSelector').click(function() {
+	document.querySelector('#sampHoldNormalSelector').addEventListener('click', function(){
 		setSHMode(SHMODE_NORMAL);
 	});
-	$('#sampHoldFollowSelector').click(function() {
+	document.querySelector('#sampHoldFollowSelector').addEventListener('click', function(){
 		setSHMode(SHMODE_FOLLOW);
 	});
 }
 initGateSlider = function() {
-	var slider = $('#gateWidthSlider')[0];
+	var slider = document.querySelector('#gateWidthSlider');
 	noUiSlider.create(slider, {
 		start: 50,
 		orientation: "horizontal",
@@ -500,7 +511,7 @@ initGateSlider = function() {
 
 // initialize/create the ouput sliders and buttons
 initOutputSlider = function(){
-	var slider = $('#outputSlider')[0];
+	var slider = document.querySelector('#outputSlider');
 	noUiSlider.create(slider, {
 		start: 2047,
 		orientation: "vertical",
@@ -545,6 +556,7 @@ initMasterSection = function() {
 
 initStep = function(parentSel, step) {
 	var stepObj = new sequencerStep( { idpref: 'step_', parentSelector: parentSel, stepIndex : step.idx, val: step.val, enabled: step.enabled, reset: resets[step.idx] } );
+	stepObj.init();
 	stepObj.addHandlers(handleStepToggle, handleStepSlider, handleStepReset);
 	if ( currentStep == step.idx ) {
 		stepObj.setCurrent();
@@ -566,6 +578,7 @@ initSteps = function() {
 }
 initArpStep = function(parentSel, step) {
 	var stepObj = new arpStep( { idpref: 'arpstep_', parentSelector: parentSel, stepIndex : step.idx, val: step.val, enabled: step.enabled, reset: resets[step.idx] } );
+	stepObj.init();
 	stepObj.addHandlers(handleArpStepToggle, handleArpStepSlider, handleStepReset);
 	if ( currentStep == step.idx ) {
 		stepObj.setCurrent();
@@ -575,22 +588,25 @@ initArpStep = function(parentSel, step) {
 
 initConsole = function() {
 	// console send button
-	$('#seqConsoleSend').click(function(){
-		var req = $('#seqConsoleRequest').val();
+	document.querySelector('#seqConsoleSend').addEventListener('click', function(){
+		var req = document.querySelector('#seqConsoleRequest').value;
 		seqCont.sendRawData(req + '\n');
-		$('#seqConsoleRequest').val('');
+		document.querySelector('#seqConsoleRequest').value = '';
 	});
-	$('#seqConsoleClear').click(function(){
-		$('#seqConsoleResponse').empty();
+	document.querySelector('#seqConsoleClear').addEventListener('click', function(){
+		document.querySelector('#seqConsoleResponse').innerHTML = null;
 	});
-	$('#seqConsoleList').click(function(){
+	document.querySelector('#seqConsoleClose').addEventListener('click', function(){
+		document.querySelector('#seqConsoleCont').style.display = 'none';
+	});
+	document.querySelector('#seqConsoleList').addEventListener('click', function(){
 		seqCont.list();
 	});
-	$('#seqConsoleDump').click(function(){
+	document.querySelector('#seqConsoleDump').addEventListener('click', function(){
 		seqCont.dump();
 	});
-	$('#seqConsoleReconnect').click(function(){
-		var dev = $('#seqConsoleRequest').val();
+	document.querySelector('#seqConsoleReconnect').addEventListener('click', function(){
+		var dev = document.querySelector('#seqConsoleRequest').value;
 		if ( dev != null && dev.indexOf('/dev') == 0 ) {
 			console.log("Attempting to reconnect to: " + dev);			
 		} else {
@@ -599,12 +615,12 @@ initConsole = function() {
 		}
 	});
 	// console launcher
-	$('#sequencerVersion').dblclick(function(){
-		$('#seqConsole').modal();
+	document.querySelector('#sequencerVersion').addEventListener('dblclick', function(){
+		document.querySelector('#seqConsoleCont').style.display = 'flex';
 	});
 }
 
-$(document).ready(function(){
+document.addEventListener("DOMContentLoaded", function(event) { 
 
 	window.addEventListener('keydown', function(e) {
 		if(e.keyCode == 32) {

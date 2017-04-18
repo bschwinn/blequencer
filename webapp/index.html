@@ -158,46 +158,49 @@
 		</div>
 	</div>
 
-	<div id="seqConsole" class="modal fade">
-	    <div class="modal-dialog">
-	        <div class="modal-content">
-	            <div class="modal-header clearfix">
-	                <h4 class="pull-left">Serial Console</h4>
-	            </div>
-	            <div class="modal-body">
-	            	<div id="seqConsoleBody">
-	            		<div class="clearfix">
-	            			<span class="pull-left">Logger</span>
-	            			<button type="button" id="seqConsoleClear" class="btn btn-warning btn-xs pull-right"><span class="glyphicon glyphicon-trash"></span></button>
-	            		</div>
-						<div id="seqConsoleResponse"></div>
-						<form class="form-horizontal" onsubmit="return false;">
-							<div class="form-group">
-								<div class="col-sm-10">
-									<input type="text" class="form-control" id="seqConsoleRequest" placeholder="enter a sequencer command">
-								</div>
-								<div class="col-sm-2">
-									<button type="button" id="seqConsoleSend" class="btn btn-warning btn-small">Send</button>
-								</div>
-							</div>
-							<div class="form-group">
-								<div class="col-sm-12">
-									<button type="button" id="seqConsoleList" class="btn btn-warning btn-small">Devices</button>
-									<button type="button" id="seqConsoleDump" class="btn btn-warning btn-small">Import</button>
-									<button type="button" id="seqConsoleReconnect" class="btn btn-warning btn-small">Reconnect</button>
-								</div>
-							</div>
-		                </form>
-	            	</div>
-	            </div>
+	<div id="seqConsoleCont">
+		<div id="seqConsole" class="panel">
+			<div class="panel-body">
+				<div id="seqConsoleBody">
+					<div class="clearfix">
+						<span class="pull-left">Logger</span>
+						<button type="button" id="seqConsoleClose" class="btn btn-warning btn-xs pull-right"><span class="glyphicon glyphicon-remove"></span></button>
+					</div>
+					<div id="seqConsoleResponse"></div>
+					<form class="form-inline" onsubmit="return false;">
+						<div class="form-group">
+							<input type="text" class="form-control" id="seqConsoleRequest" placeholder="enter a sequencer command">
+						</div>
+						<button type="button" id="seqConsoleSend" class="btn btn-warning btn-small">Send</button>
+					</form>
+					<div class="buttonRow">
+						<button type="button" id="seqConsoleList" class="btn btn-warning btn-small">List Devices</button>
+						<button type="button" id="seqConsoleDump" class="btn btn-warning btn-small">Import Device Settings</button>
+						<button type="button" id="seqConsoleReconnect" class="btn btn-warning btn-small">Reconnect</button>
+						<button type="button" id="seqConsoleClear" class="btn btn-warning btn-small">Clear Logger</button>
+					</div>
+				</div>
 	        </div>
 	    </div>
 	</div>
 
+	<template id="tmplSequencerStep">
+		<div class="seqStepOuter">
+			<div class="seqStep">
+				<div class="stepIndicator clearfix">
+					<div class="stepLED pull-left"></div>
+					<div class="stepValue text-center pull-right"></div>
+				</div>
+				<div class="stepSlider"></div>
+				<div class="stepToggle clearfix">
+					<a class="btn btn-sm pull-left"></a>
+					<a class="btn btn-sm pull-right">Rst</a>
+				</div>
+			</div>
+		</div>
+	</template>
+
 	<script type='text/javascript' src="js/nouislider.min.js"></script>
-	<script type='text/javascript' src="js/jquery-1.11.3.min.js"></script>
-	<script type='text/javascript' src="js/potentiometer.js"></script>
-	<script type='text/javascript' src="js/bootstrap.min.js"></script>
 	<script type='text/javascript' src="js/sequencerlib.js"></script>
 	<script type='text/javascript' src="js/sequencer.js"></script>
 

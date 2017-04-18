@@ -1,17 +1,14 @@
 // sequencer hardware/container "service"
-sequencerContainer = function(config) {
-    if ( arguments.length > 0 ) this.init(config);
-};
-sequencerContainer.prototype = {
-	init: function(config) {
+class sequencerContainer {
+	constructor(config) {
         this.config = config;
 	    this.container = null;
         this.evtHandlers = {};
         this.dataHandlers = [];
         this.errHandlers = [];
         this.createContainee();
-	},
-    createContainee: function() {
+	}
+    createContainee() {
         var that = this;
         window.__containee = {
             on: function(evt, data) {
@@ -31,70 +28,70 @@ sequencerContainer.prototype = {
                 }
             }
         };
-    },
-    addEventHandler: function(evtName, callback) {
+    }
+    addEventHandler(evtName, callback) {
         this.evtHandlers[evtName] = callback;
-    },
-    addDataHandler: function(callback) {
+    }
+    addDataHandler(callback) {
         this.dataHandlers[this.dataHandlers.length] = callback;
-    },
-    addErrorHandler: function(callback) {
+    }
+    addErrorHandler(callback) {
         this.errHandlers[this.errHandlers.length] = callback;
-    },
-    wireContainer: function(container) {
+    }
+    wireContainer(container) {
         this.container = container;
         this.initContainer(this.config);
         this.getInfo();
-    },
-    hasContainer: function() {
+    }
+    hasContainer() {
         return (this.container != null);
-    },
-    getInfo: function() {
+    }
+    getInfo() {
         this.sendEvent("info");
-    },
-    initContainer: function(config) {
+    }
+    initContainer(config) {
         this.sendEvent("init", config);
-    },
-    list: function() {
+    }
+    list() {
         this.sendEvent("list");
-    },
-    dump: function() {
+    }
+    dump() {
         this.sendEvent("dump");
-    },
-    start: function() {
+    }
+    start() {
         this.sendEvent("play");
-    },
-    pause: function() {
+    }
+    pause() {
         this.sendEvent("pause");
-    },
-    reset: function() {
+    }
+    reset() {
         this.sendEvent("reset");
-    },
-    stop: function() {
+    }
+    stop() {
         this.sendEvent("stop");
-    },
-    next: function() {
+    }
+    next() {
         this.sendEvent("next");
-    },
-    prev: function() {
+    }
+    prev() {
         this.sendEvent("prev");
-    },
-    setNoise: function(noiz) {
+    }
+    setNoise(noiz) {
         this.sendEvent("noise", noiz);
-    },
-    setNoiseColor: function(col) {
+    }
+    setNoiseColor(col) {
         this.sendEvent("nzcol", col);
-    },
-    sendData: function(data) {
+    }
+    sendData(data) {
         this.sendEvent("data", data);
-    },
-    sendRawData: function(data) {
+    }
+    sendRawData(data) {
         this.sendEvent("rawdata", data);
-    },
-    sendBatch: function(data) {
+    }
+    sendBatch(data) {
         this.sendEvent("batch", data);
-    },
-    sendEvent: function(evt, data) {
+    }
+    sendEvent(evt, data) {
         if ( this.container ) {
             this.container.send(evt, data);
         }
@@ -115,14 +112,9 @@ iOSContainer.prototype = {
     }
 }
 
-
-
-// sequencer step with slider, enabler and step indicator
-sequencerStep = function(config) {
-    if ( arguments.length > 0 ) this.init(config);
-};
-sequencerStep.prototype = {
-    init: function(config) {
+// chord chart editor - allows changing positions, maj/min and deleting
+class sequencerStep {
+	constructor(config) {
         this.idpref = config.idpref || "step_";
         this.enabled = config.enabled;
         this.stepIndex = config.stepIndex;
@@ -136,31 +128,31 @@ sequencerStep.prototype = {
         this.sliderElem = null;
         this.toggleElem = null;
         this.resetElem = null;
+        this.template = '#tmplSequencerStep';
+        this.rootPath = '.seqStepOuter';
+        this.sliderPath = '.stepSlider';
+        this.indicatorPath = '.stepIndicator .stepLED';
+        this.valuePath = '.stepIndicator .stepValue';
         this.addElements(config.parentSelector);
-    },
-    addElements: function(parentSel) {
+    }
+    addElements(parentSel) {
         var that = this;
-        var parent = $(parentSel);
-        parent.append('<div id="' + this.id + '" class="seqStepOuter"></div>');
-        var stepOuter = parent.find('#' + this.id);
-        stepOuter.append('<div class="seqStep"></div>');
-        var step = stepOuter.find('.seqStep');
-        step.append('<div class="stepIndicator clearfix"><div class="stepLED pull-left"></div><div class="stepValue text-center pull-right"></div></div>')
-            .append('<div class="stepSlider"></div>')
-            .append('<div class="stepToggle clearfix"><a class="btn btn-sm pull-left"></a><a class="btn btn-sm pull-right">Rst</a></div>');
-        this.indicatorElem = step.find('.stepIndicator .stepLED')[0];
-        this.valueElem = step.find('.stepIndicator .stepValue')[0];
-        this.sliderElem = step.find('.stepSlider')[0];
-        this.toggleElem = step.find('.stepToggle .btn')[0];
-        this.resetElem = step.find('.stepToggle .btn')[1];
-        $(this.toggleElem).click(function() {
+	    var tmpl = document.querySelector(this.template);
+		var clone = document.importNode(tmpl.content, true);
+        clone.querySelector(this.rootPath).setAttribute('id', this.id);
+        this.indicatorElem = clone.querySelector(this.indicatorPath);
+        this.valueElem = clone.querySelector(this.valuePath);
+        this.sliderElem = clone.querySelector(this.sliderPath);
+        this.toggleElem = clone.querySelectorAll('.stepToggle .btn')[0];
+        this.resetElem = clone.querySelectorAll('.stepToggle .btn')[1];
+        this.toggleElem.addEventListener('click', function() {
             that.enabled = !that.enabled;
             that.updateToggle();
             if (that.toggleHandler!= null) {
                 that.toggleHandler( that.stepIndex, that.enabled );
             }
         });
-        $(this.resetElem).click(function() {
+        this.resetElem.addEventListener('click', function() {
             that.reset = !that.reset;
             that.updateReset();
             if (that.resetHandler!= null) {
@@ -175,12 +167,15 @@ sequencerStep.prototype = {
                 that.slideHandler( that.stepIndex, that.val, that.enabled );
             }
         });
+        document.querySelector(parentSel).appendChild(clone);
+    }
+    init() {
         this.updateSlider();
         this.updateVal();
         this.updateToggle();
         this.updateReset();
-    },
-    addSlider: function(elem) {
+    }
+    addSlider(elem) {
         noUiSlider.create(elem, {
             start: 2047,
             orientation: "vertical",
@@ -195,40 +190,46 @@ sequencerStep.prototype = {
                 density: 4
             }
         });
-    },
-    addHandlers: function(ontoggle, onslide, onreset) {
+    }
+    addHandlers(ontoggle, onslide, onreset) {
         this.toggleHandler = ontoggle;
         this.slideHandler = onslide;
         this.resetHandler = onreset;
-    },
-    setCurrent: function() {
-        $(this.indicatorElem).addClass('enabled');
-    },
-    resetCurrent: function() {
-        $(this.indicatorElem).removeClass('enabled');
-    },
-    updateToggle: function() {
+    }
+    setCurrent() {
+        this.indicatorElem.classList.add('enabled');
+    }
+    resetCurrent() {
+        this.indicatorElem.classList.remove('enabled');
+    }
+    updateToggle() {
         if ( this.enabled ) {
-            $(this.toggleElem).removeClass('btn-off').addClass('btn-danger').text(this.labels[1]);
+            this.toggleElem.classList.remove('btn-off');
+            this.toggleElem.classList.add('btn-danger')
+            this.toggleElem.innerText  = this.labels[1];
         } else {
-            $(this.toggleElem).addClass('btn-off').removeClass('btn-danger').text(this.labels[0]);
+            this.toggleElem.classList.remove('btn-danger')
+            this.toggleElem.classList.add('btn-off');
+            this.toggleElem.innerText  = this.labels[0];
         }
-    },
-    updateReset: function() {
+    }
+    updateReset() {
         if ( this.reset ) {
-            $(this.resetElem).removeClass('btn-off').addClass('btn-danger');
+            this.resetElem.classList.remove('btn-off');
+            this.resetElem.classList.add('btn-danger')
         } else {
-            $(this.resetElem).addClass('btn-off').removeClass('btn-danger');
+            this.resetElem.classList.remove('btn-danger')
+            this.resetElem.classList.add('btn-off');
         }
-    },
-    updateSlider: function() {
+    }
+    updateSlider() {
         this.sliderElem.noUiSlider.set(this.val);
-    },
-    updateVal: function() {
+    }
+    updateVal() {
         var pct = (this.val / 4095) * 100;
-        $(this.valueElem).text(pct.toFixed(1) + '%');
-    },
-    update: function(enabled, val, reset) {
+        this.valueElem.innerText = (pct.toFixed(1) + '%');
+    }
+    update(enabled, val, reset) {
         this.enabled = enabled;
         this.val = val;
         this.reset = reset;
@@ -238,34 +239,111 @@ sequencerStep.prototype = {
     }
 }
 
-// arpeggiator step with slider, enabler and step indicator
-arpStep = function(config) {
-    if ( arguments.length > 0 ) this.init(config);
-};
-arpStep.prototype = new sequencerStep();
-arpStep.prototype.noteNames = ["ROOT","m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7", "OCT"];
-arpStep.prototype.addSlider = function(elem) {
-    noUiSlider.create(elem, {
-        start: 6,
-        orientation: "vertical",
-        direction: 'rtl',
-        step: 1,
-        range: {
-            'min': 0,
-            'max': 13
-        },
-        pips: {
-            mode: 'steps',
-            density: 13
+class arpStep extends sequencerStep {
+    constructor(config) {
+        super(config);
+        this.noteNames = ["ROOT","m2", "M2", "m3", "M3", "P4", "b5", "P5", "m6", "M6", "m7", "M7", "OCT"];
+    } 
+    addSlider(elem) {
+        noUiSlider.create(elem, {
+            start: 6,
+            orientation: "vertical",
+            direction: 'rtl',
+            step: 1,
+            range: {
+                'min': 0,
+                'max': 13
+            },
+            pips: {
+                mode: 'steps',
+                density: 13
+            }
+        });
+    };
+    updateVal() {
+        var val = this.noteNames[parseInt(this.val)];
+        this.valueElem.innerText = val;
+    }
+}
+
+
+class potentiometer {
+	constructor(id, config) {
+        this.id = id;
+        this.width = config.width;
+        this.height = config.height;
+        this.min = config.min || 0;
+        this.max = config.max || 11;
+        this.value = config.value || 7;
+        this.sensitivity = config.sensitivity || 0.01;
+        this.rotate = config.rotate || function(){};
+        this.MAX_ROT = 315;
+		this.template = '<div class="_potentiometer"><div class="_potentiometer_top"></div><div class="_potentiometer_base"></div></div>';
+    }
+    render() {
+        var par = document.getElementById(this.id);
+        par.innerHTML = this.template;
+        var pot = par.querySelector('._potentiometer');
+        var potTop = par.querySelector('._potentiometer_top');
+        var potBase = par.querySelector('._potentiometer_base');
+        pot.style.width = this.width;
+        pot.style.height = this.height;
+        potTop.style.width = this.width;
+        potTop.style.height = this.height;
+        potBase.style.width = this.width;
+        potBase.style.height = this.height;
+
+        var startDeg = -1;
+        var currentDeg = 0;
+        var rotation = 0;
+        var lastDeg = 0;
+
+        // map value to rotation
+        var initRat = 0;
+        if ( this.value >= this.min && this.value <= this.max ) {
+            initRat = (this.value-this.min) / (this.max - this.min)
         }
-    });
-};
-arpStep.prototype.updateVal = function() {
-    var val = this.noteNames[parseInt(this.val)];
-    $(this.valueElem).text(val);
-};
+        var currentDeg = initRat * this.MAX_ROT;
+        potTop.style.transform = 'rotate('+(currentDeg)+'deg)';
+        this.rotate(currentDeg/this.MAX_ROT);
 
+        let that = this;
+		pot.addEventListener('mousedown', function(e){
 
+            e.preventDefault();
+            var initialVert = e.pageY;
+            var calcRat;
+
+            function mouseMv(e){
+                var newVert = e.pageY;
+                if ( newVert > initialVert) {
+                    calcRat = initRat - (that.sensitivity * (newVert - initialVert));
+                } else {
+                    calcRat = initRat + (that.sensitivity * (initialVert - newVert));
+                }
+
+                if ( calcRat >= 1 ) {
+                    calcRat = 1;
+                }
+                if ( calcRat <= 0 ) {
+                    calcRat = 0;
+                }
+                currentDeg = calcRat * that.MAX_ROT;
+
+                potTop.style.transform = 'rotate('+(currentDeg)+'deg)';
+                that.rotate(currentDeg/that.MAX_ROT);
+            }
+			document.addEventListener('mousemove',mouseMv);
+
+			document.addEventListener('mouseup', function mouseUp(e){
+                document.removeEventListener('mousemove', mouseMv);
+                document.removeEventListener('mousemove', mouseUp);
+                initRat = calcRat;
+            });
+
+		});
+    }
+}
 
 
 /*********************************************

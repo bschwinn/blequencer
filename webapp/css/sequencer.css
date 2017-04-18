@@ -226,18 +226,35 @@ BODY {
 }
 
 /* serial console stuff */
-#seqConsole {
+#seqConsoleCont {
+	z-index: 99;
+    position:fixed;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	background:rgba(0, 0, 0, .8);
+	/*display: flex;*/
+	display: none;
+	justify-content: center;
+	align-items: center;
 }
-#seqConsole .modal-header {
+#seqConsole {
+	width:65%;
+}
+#seqConsole .panel-header {
 	color:#000;
 }
-#seqConsole .modal-content {
+#seqConsole .panel-body {
 	background: url('../img/graymetal2.png');
 }
 #seqConsoleBody {
 	background: url('../img/blackmetal.png');
 	border-radius: 7px;
 	padding:10px;
+}
+#seqConsoleBody .buttonRow {
+	margin:10px 0 0 0;
 }
 #seqConsoleResponse {
 	margin:10px 0;
