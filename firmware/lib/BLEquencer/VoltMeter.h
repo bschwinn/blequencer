@@ -18,19 +18,21 @@ public:
     VoltMeter(void (*)(float));
     
     // called each scan
-    void begin(int, int);
-    void update();
+    void begin(int, int, int);
+    void update(unsigned long, unsigned long);
     
 private:
     int _meterPin;
-    int _updateTime;
-    int _lastUpdate;
+    int _sampleTime;
+    int _lastSample;
+    int _displayUpdateTime; // in ms
+    int _lastDisplayUpdate;
     
     float _vref;
     int _R1;
     int _R2;
     
-    void _sampleVoltage();
+    void _sampleVoltage(unsigned long);
     
     void (*onUpdate)(float);
 

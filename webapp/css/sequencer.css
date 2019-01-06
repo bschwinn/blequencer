@@ -36,8 +36,14 @@ BODY {
 	margin-left: 0;
 	margin-right: 0;
 }
-.controls .row.bunk {
+.controls .row.space {
 	margin-top: 10px;
+}
+.controls .row.halfspace {
+	margin-top: 5px;
+}
+.controls .row.twospace {
+	margin-top: 20px;
 }
 #masterLogo {
 	padding:0;
@@ -94,12 +100,6 @@ BODY {
 	font-weight: bold;
 	text-align: center;
 }
-.masterSlider {
-	margin: 10px 10px;
-	display: inline-block;
-	height: 120px;
-	background: orange;
-}
 .masterOutput {
     padding: 0px;
     position:relative;
@@ -111,10 +111,12 @@ BODY {
 #bank1Selector, #bank2Selector, #seqModeSelector, #arpModeSelector, #sampHoldNormalSelector, #sampHoldFollowSelector {
 	width:50px;
 }
+#seqSpeedHalf, #seqSpeed1X, #seqSpeed2X {
+    width: 45px;
+}
 
 #noiseSelector {
 	margin:6px 0 0 12px;
-
 }
 
 #noiseColorValue {
@@ -124,7 +126,7 @@ BODY {
     left: 18px;
 }
 
-.gateSlider {
+.gateSlider, .masterSlider {
 	margin: 20px 10px 10px 10px;
 	height: 5px;
 	background: orange;
@@ -200,7 +202,7 @@ BODY {
 }
 
 /* override display of pip labels - pretty meaningless for CVs */
-.masterSlider .noUi-value.noUi-value-large, .stepSlider .noUi-value.noUi-value-large, .stepSlider .noUi-value.noUi-value-sub{
+.stepSlider .noUi-value.noUi-value-large, .stepSlider .noUi-value.noUi-value-sub{
 	display: none;
 }
 
@@ -216,17 +218,17 @@ BODY {
 }
 
 
-.gateSlider .noUi-handle {
+.gateSlider .noUi-handle, .masterSlider .noUi-handle {
 	height:15px;
 	width:20px;
 	left:-10px;
 }
-.gateSlider .noUi-handle:after, .gateSlider .noUi-handle:before {
+.gateSlider .noUi-handle:after, .gateSlider .noUi-handle:before, .masterSlider .noUi-handle:after, .masterSlider .noUi-handle:before {
 	height:3px;
 }
 
 /* serial console stuff */
-#seqConsoleCont {
+#seqConsoleCont, #envelopeEditor {
 	z-index: 99;
     position:fixed;
 	top:0;
@@ -239,16 +241,16 @@ BODY {
 	justify-content: center;
 	align-items: center;
 }
-#seqConsole {
+#seqConsole, #envelopeEditor .panel {
 	width:65%;
 }
-#seqConsole .panel-header {
+#seqConsole .panel-header, #envelopeEditor .panel-header {
 	color:#000;
 }
-#seqConsole .panel-body {
+#seqConsole .panel-body, #envelopeEditor .panel-body {
 	background: url('../img/graymetal2.png');
 }
-#seqConsoleBody {
+#seqConsoleBody, #envelopeEditorBody {
 	background: url('../img/blackmetal.png');
 	border-radius: 7px;
 	padding:10px;
@@ -281,4 +283,34 @@ BODY {
     background-color: #222;
     border-color: #555;
     color: orange;
+}
+
+#cv1ADSR, #cv2ADSR {
+	height: 400px;
+	padding: 5px;
+	border: solid 1px #555;
+	border-radius: 4px;
+	background: #222;
+}
+
+#cv1ADSR .slide, #cv2ADSR .slide {
+    margin: 0 auto;
+	height: 250px;
+	background: orange;
+}
+/* override display of pip labels - pretty meaningless for CVs */
+#cv1ADSR .slide .noUi-value.noUi-value-large, #cv1ADSR .slide .noUi-value.noUi-value-sub, #cv2ADSR .slide .noUi-value.noUi-value-large, #cv2ADSR .slide .noUi-value.noUi-value-sub {
+	display: none;
+}
+
+#cv1ADSR .slidelabel, #cv2ADSR .slidelabel {
+    margin: 15px 0 0 0;
+    text-align: center;
+}
+#cv1ADSR .slidevalue, #cv2ADSR .slidevalue {
+    margin: 0 0 15px 0;
+    text-align: center;
+}
+#cv1ADSR .envName, #cv2ADSR .envName {
+    margin: 15px 5px;
 }

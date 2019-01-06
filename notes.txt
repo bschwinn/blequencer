@@ -1,0 +1,60 @@
+Utitlities
+
+1) Mults
+  - 2x8 simple buffer (two 1x4)
+  - 1x3 buffered in and out
+  - 1x4 logic mult (splitting clocks)
+  - 4 way passive mult
+2) noise source
+  - white
+  - pink
+3) 4 Attenuverters
+  - 2 standard
+  - 2 w/ fine tune
+4) Arduino/BLEquencer 32+ step sequencer and arpegiator
+  - 2 precision CV outs
+  - 2 8 bit envelope generators
+  - trigger and gate outputs
+  - gate input (arpegiator)
+  - Sample/Hold (Follow/Freeze) and Quantizer IO
+  - Volt meter
+
+Jacks
+  - 23 (mults)
+  - 2 (noise)
+  - 8 (attenuverters)
+  - 11 (sequencer)
+
+Pots
+  - 0
+  - 1 or 2 ?
+  - 6
+
+TODO:
+ - better name
+ - compile
+ - push
+ - run it on arduino
+ - check on O scope
+ - finish up sample/hold and quantizer
+    - test S/Hold
+    - test F/Freeze
+    - impl quantizer
+    - test quantizer
+ - finish up volt meter
+    - voltage divider circuit
+    - LCD display logic
+    - min/max voltage
+ - draw up panel design
+ - add paging to lcd display
+ - start mac osx app
+ - start ios app
+ - blue tooth shield/code
+
+
+
+Attenuverters etc
+http://www.modular.fonik.de/pdf/RetroAtt.pdf
+https://kassu2000.blogspot.com/2018/04/precision-attenuverter-mixer.html
+http://www.doepfer.de/DIY/a100_diy.htm
+https://www.electronics-tutorials.ws/opamp/opamp_6.html

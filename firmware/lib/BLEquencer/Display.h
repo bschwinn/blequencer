@@ -27,13 +27,13 @@ class Display {
 public:
     Display(int);
     
-    void begin(bool, bool, float, int);
-    void update();
+    void begin(bool, int, float, int);
+    void update(unsigned long currMicros, unsigned long currMillis);
     
     void setSpeed(float);
     void setVoltage(float);
     void setArpMode(bool);
-    void setSampleHoldMode(bool);
+    void setEffectsAlgo(int);
     void setGateWidth(int);
     
 private:
@@ -44,7 +44,7 @@ private:
     unsigned int _startTime;
     
     bool _arpMode;
-    bool _shFollowMode;
+    int _effectsAlgo;
     float _speed;
     int _gateWidth;
     

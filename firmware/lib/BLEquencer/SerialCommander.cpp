@@ -19,7 +19,7 @@ void SerialCommander::begin(uint16_t baud) {
     _baud = baud;
 }
 
-void SerialCommander::update() {
+void SerialCommander::update(unsigned long currMicros, unsigned long currMillis) {
     static byte ndx = 0;
     char theChar;
 
@@ -79,7 +79,7 @@ void SerialCommander::parseSerialLine() {
 }
 
 void SerialCommander::parseSerialCommand(int cmd, const char args[LINE_LENGTH-1]) {
-    if ( cmd < CMD_BPM || cmd > CMD_STENB ) {
+    if ( cmd < CMD_BPM || cmd > CMD_ADSR ) {
         Serial.print("SerialCommanderError(unknown) cmd: ");
         Serial.print(cmd);
         Serial.print(", data: ");

@@ -5,6 +5,15 @@
 
 // baud rate
 #define THEBAUD 9600
+#define PIN_GATEOUT 3
+#define PIN_TRIGOUT 4
+#define PIN_SHOUT 6    // PWM
+#define PIN_NZOUT 2
+#define PIN_ENV1OUT 8  // PWM
+#define PIN_ENV2OUT 9  // PWM
+#define PIN_GATEIN 5
+#define PIN_SHIN 0
+#define PIN_SHTRIG 7
 
 // beats and commands handler funcs (see impl below)
 void handleBeat(int, int, int);
@@ -15,34 +24,36 @@ void handleVoltage(float);
 // create our sequencer and serial command monitor
 BLEquencer seq(handleBeat);
 SerialCommander commander(handleCmd, handleCmdError);
-VoltMeter dmm(handleVoltage);
+VoltMeter dmm = VoltMeter(handleVoltage);
 Display lcd = Display(3000);
 
 // initialize the commander, DACs and sequencer
 void setup() {
-  // TODO can this be put into the commander????
-  Serial.begin(THEBAUD);
-  // init the serial commander (monitor)
-  commander.begin(THEBAUD);
-  // init our display
-  lcd.begin(seq.getArpMode(), seq.getSampleHoldMode(), seq.getSpeed(), seq.getGateWidth());
-  // init the sequencer itself
-  seq.begin(2, 3, 4, 5, 0, 6, 7);
-  // init the volt meter (used for calibration)
-  dmm.begin(1, 250);
+    // TODO can this be put into the commander????
+    Serial.begin(THEBAUD);
+    // init the serial commander (monitor)
+    commander.begin(THEBAUD);
+    // init our display
+    lcd.begin(seq.getArpMode(), seq.getEffectsAlgo(), seq.getSpeed(), seq.getGateWidth());
+    // init the sequencer itself
+    seq.begin(PIN_GATEOUT, PIN_TRIGOUT, PIN_NZOUT, PIN_GATEIN, PIN_SHIN, PIN_SHTRIG, PIN_SHOUT, PIN_ENV1OUT, PIN_ENV2OUT);
+    // init the volt meter (used for calibration)
+    dmm.begin(1, 500, 250);
 }
 
 // update the sequencer and serial monitor
 void loop() {
-  commander.update();
-  seq.update();
-  lcd.update();
-  dmm.update();
+    unsigned long currMicros = micros();
+    unsigned long currMillis = currMicros/1000;
+    commander.update(currMicros, currMillis);
+    seq.update(currMicros, currMillis);
+    lcd.update(currMicros, currMillis);
+    dmm.update(currMicros, currMillis);
 }
 
 // sequencer beat handler - update dacs and generate a "beat" event to the serial port
 void handleBeat(int _step, int val1, int val2) {
-  commander.sendStepUpdate(_step, val1, val2);
+    commander.sendStepUpdate(_step, val1, val2);
 }
 
 // command handler - issue sequencer command, update serial when necessary
@@ -92,8 +103,8 @@ void handleCmd(int cmd, int args[]) {
       lcd.setGateWidth(args[0]);
       break;
     case SerialCommander::CMD_SHMOD:
-      seq.setSampleHoldMode(args[0]==1);
-      lcd.setSampleHoldMode(args[0]==1);
+      seq.setEffectsAlgo(args[0]);
+      lcd.setEffectsAlgo(args[0]);
       break;
     case SerialCommander::CMD_STRST:
       seq.setStepReset(args[0], args[1]==1);
@@ -101,11 +112,23 @@ void handleCmd(int cmd, int args[]) {
     case SerialCommander::CMD_STENB:
       seq.setStepEnabled(args[0], args[1]==1);
       break;
+    case SerialCommander::CMD_ADSR: {
+        if (args[1]=='0') {
+            seq.setAttackRate(args[0], args[2]);
+        } else if (args[1]=='1') {
+            seq.setDecayRate(args[0], args[2]);
+        } else if (args[1]=='2') {
+            seq.setSustainLevel(args[0], args[2]);
+        } else if (args[1]=='3') {
+            seq.setReleaseRate(args[0], args[2]);
+        }
+        break;
+    }
     case SerialCommander::CMD_DUMP:
       Serial.print("conf ");
       Serial.print(seq.getArpMode());
       Serial.print(',');
-      Serial.print(seq.getSampleHoldMode());
+      Serial.print(seq.getEffectsAlgo());
       Serial.print(',');
       Serial.print(seq.getNoise());
       Serial.print(',');

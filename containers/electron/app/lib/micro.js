@@ -133,6 +133,7 @@ microControllerSerial.prototype = {
         this.CMD_DUMP  = ">";  // no args
         this.CMD_STRST = "?";  // step, bool
         this.CMD_STENB = "@";  // step, bool
+        this.CMD_ADSR  = "A";  // envelope, state, val (0-1023)
     },
     init : function(config) {
         this.speed = config.speed;
@@ -316,6 +317,8 @@ microControllerSerial.prototype = {
             parsed = this.CMD_SHMOD + ((data.shmode=="follow") ? "1" : "0") + "\n";
         } else if ( data.reset != null ) {
             parsed = this.CMD_STRST + data.reset + "," + ((data.val==true) ? "1" : "0") + "\n";
+        } else if ( data.envelope != null ) {
+            parsed = this.CMD_ADSR + data.envelope + "," + data.state + "," + data.val + "\n";
         }
         return parsed;
     },

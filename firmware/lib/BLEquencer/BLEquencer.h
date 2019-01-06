@@ -12,38 +12,30 @@
 #include <stdio.h>
 #include "Arduino.h"
 #include <Adafruit_MCP4725.h>
+#include <Envelope.h>
 
 
 /* BLE Sequencer */
 
 #define MAX_STEPS 16
-#define SEMI_TONE 67
+// revisit this number, very close to 4096/(5volts * 12 chomatic notes)
+#define SEMI_TONE 67 // at 12 bit (4096)
 
 #define STATUS_RUNNING 0
 #define STATUS_PAUSED 1
 #define STATUS_STOPPED 2
 
-#define tonic 0
-#define minor2nd 67
-#define major2nd 134
-#define minor3rd 201
-#define major3rd 268
-#define fourth 335
-#define tritone 402
-#define fifth 469
-#define minor6th 536
-#define major6th 603
-#define minor7th 670
-#define major7th 737
-#define octave 804
-#define octave2 1608
+#define FXALGO_SAMPLEHOLD 0
+#define FXALGO_FOLLOWFREEZE 1
+#define FXALGO_QUANT_CHROM 2
+
 
 class BLEquencer {
 
 public:
     BLEquencer(void (*callback)(int, int, int));
 
-    void begin(int, int, int, int, int, int, int);
+    void begin(int, int, int, int, int, int, int, int, int);
 
     // control functions
     void  init();
@@ -61,18 +53,22 @@ public:
     void  setNoiseColor(int color);
     void  setArpMode(bool onoff);
     void  setGateWidth(int pct);
-    void  setSampleHoldMode(bool);
+    void  setEffectsAlgo(int);
     bool  getArpMode();
-    bool  getSampleHoldMode();
+    bool  getEffectsAlgo();
     bool  getNoise();
     int   getNoiseColor();
     float getSpeed();
     int   getGateWidth();
     int   getStepNote(int, int);
     bool  getStepReset(int);
+    void  setAttackRate(int output, float rate);
+    void  setDecayRate(int output, float rate);
+    void  setReleaseRate(int output, float rate);
+	void  setSustainLevel(int output, float level);
 
     // called each scan
-    void update();
+    void update(unsigned long currMicros, unsigned long currMillis);
 
     // callback for each beat of the sequencer
     void (*onBeat)(int, int, int);
@@ -80,7 +76,8 @@ public:
 private:
 
     static const int TRIGGER_DURATION  = 10; // in micro seconds
-    
+    static const int ENV_SAMPLE_PERIOD = 250; // in micro seconds
+
     float _gateWidth;
 
     int   _notes[MAX_STEPS];
@@ -96,6 +93,10 @@ private:
     // main CV outs
     Adafruit_MCP4725 _dac1;
     Adafruit_MCP4725 _dac2;
+
+    // ASSR envelopes
+    Envelope env1;
+    Envelope env2;
 
     // input gate
     int _inputGatePin;
@@ -121,12 +122,13 @@ private:
     bool _triggerOn;
     unsigned long _prevTrigger;
     
-    // sample and hold
+    // sample and hold and quantizer
     int _sampHoldIn;
     int _sampHoldOut;
-    int _sampHoldClk;
-    bool _sampHoldFollow;
-    int _lastSampHoldClk;
+    int _sampHoldTrig;
+    bool _lastSampHoldTrig;
+    int _effectsAlgo;
+    unsigned long _prevEnvSample;
 
     // internals
     int _getFirstReset();
@@ -136,8 +138,9 @@ private:
     void _gateLow();
     void _triggerHigh();
     void _triggerLow();
-    void _makeNoise();
+    void _makeNoise(unsigned long);
     void _sampleHold();
+    void _quantize();
 };
 
 #endif /* BLEquencer_h */

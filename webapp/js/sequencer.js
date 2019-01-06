@@ -417,16 +417,11 @@ initSpeedSlider = function(){
 	var slider = document.querySelector('#speedSlider');
 	noUiSlider.create(slider, {
 		start: 2047,
-		orientation: "vertical",
-		direction: 'rtl',
+		orientation: "horizontal",
+		direction: 'ltr',
 		range: {
 			'min': 0,
 			'max': 4095
-		},
-		pips: {
-			mode: 'positions',
-			values: [0,100],
-			density: 4
 		}
 	});
 	slider.noUiSlider.on('slide', handleSpeedSlider);
@@ -440,9 +435,6 @@ initSpeedButtons = function(){
 	});
 	document.querySelector('#seqSpeed2X').addEventListener('click', function(){
 		setMultiplier(SPEED_MULT_2X);
-	});
-	document.querySelector('#seqSpeedTap').addEventListener('click', function(){
-		seqTap();
 	});
 }
 initBankButtons = function() {
@@ -620,6 +612,40 @@ initConsole = function() {
 	});
 }
 
+function initEnvelopeEditor() {
+    
+    // TODO remove this and replace with a click/tap from somewhere
+    document.getElementById('envelopeEditor').style.display = 'flex';
+
+    document.getElementById('envelopeEditorClose').addEventListener('click',() =>{
+        document.getElementById('envelopeEditor').style.display = 'none';
+    })
+
+    const envNames = ['attack', 'decay', 'sustain', 'release'];
+    const envVals = [15, 40, 127, 5];
+    for (let i=1; i<3; i++) {
+        for (let n in envNames) {
+            const name = envNames[n];
+            document.querySelector(`#cv${i}${name} .slidevalue`).innerText = envVals[n];
+            var s = document.querySelector(`#cv${i}${name} .slide`);
+            noUiSlider.create(s, {
+                start: envVals[n],
+                orientation: "vertical",
+                direction: 'rtl',
+                range: {
+                    'min': 0,
+                    'max': 255
+                }
+            });
+            s.noUiSlider.on('slide', (values, handle) => {
+                const val = parseInt(values[handle]);
+                document.querySelector(`#cv${i}${name} .slidevalue`).innerText = val;
+                seqCont.sendData( { envelope: i, state: name, val: val } );
+            });
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", function(event) { 
 
 	window.addEventListener('keydown', function(e) {
@@ -650,7 +676,8 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 	initSteps();
 	initMasterSection();
-	initConsole();
+    initConsole();
+    initEnvelopeEditor();
 
 	// testing out some container stuff
 	window.setTimeout(function() {

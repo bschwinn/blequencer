@@ -10,7 +10,6 @@
 
 <body>
 
-
 	<div class="container-fluid maincontain">
 
 		<div class="col-sm-10 stepcontain">
@@ -80,35 +79,29 @@
 
 			<div class="controls speed">
 				<div class="row">
-					<div class="col-sm-6 masterSliderContainer text-center">
+					<div class="col-sm-12 clearfix masterSliderContainer">
+						<div class="gateLabel pull-left">Speed</div>
+						<div id="seqBPM" class="gateWidth pull-right">##.#</div>
 						<div id="speedSlider" class="masterSlider"></div>
-						<div id="seqBPM" class="masterOutput">##.#</div>
 					</div>
-					<div class="col-sm-6 masterButtonContainer text-center speed">
-						<div class="masterButton">
-							<button type="button" id="seqSpeedHalf" class="btn btn-md">x/2</button>
-						</div>
-						<div class="masterButton">
-							<button type="button" id="seqSpeed1X" class="btn btn-md">x</button>
-						</div>
-						<div class="masterButton">
-							<button type="button" id="seqSpeed2X" class="btn btn-md">2x</button>
-						</div>
-						<div class="masterButton">
-							<button type="button" id="seqSpeedTap" class="btn btn-md btn-default">
-								<span class="glyphicon glyphicon-record"></span>
-			                </button>
+				</div>
+				<div class="row halfspace">
+					<div class="col-sm-12 text-center clearfix">
+						<div id="modeSelector" class="btn-group" role="group">
+							<button type="button" id="seqSpeedHalf" class="btn btn-md">S</button>
+                            <button type="button" id="seqSpeed1X" class="btn btn-md">M</button>
+                            <button type="button" id="seqSpeed2X" class="btn btn-md">F</button>
 						</div>
 					</div>
 				</div>
-				<div class="row">
+				<div class="row twospace">
 					<div class="col-sm-12 clearfix">
 						<div class="gateLabel pull-left">Legato</div>
 						<div id="gateWidth" class="gateWidth pull-right">##%</div>
 						<div id="gateWidthSlider" class="gateSlider"></div>
 					</div>
 				</div>
-				<div class="row bunk">
+				<div class="row space">
 					<div class="col-sm-12 text-center clearfix">
 						<div id="modeSelector" class="btn-group" role="group">
 							<button id="seqModeSelector" type="button" class="btn btn-md">Seq</button>
@@ -116,7 +109,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="row bunk">
+				<div class="row space">
 					<div class="col-sm-12 text-center clearfix">
 						<div id="bankSelector" class="btn-group" role="group">
 							<button type="button" id="bank1Selector" class="btn btn-md">CV1</button>
@@ -124,7 +117,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="row bunk">
+				<div class="row space">
 					<div class="col-sm-12 text-center clearfix">
 						<div id="sampHoldSelector" class="btn-group" role="group">
 							<button type="button" id="sampHoldNormalSelector" class="btn btn-md">S/H</button>
@@ -132,7 +125,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="row bunk">
+				<div class="row space">
 					<div class="col-sm-6 text-center clearfix">
 						<div id="noiseSelector" class="btn-group" role="group">
 							<button type="button" id="noiseToggle" class="btn btn-xs btn-default">Noise</button>
@@ -200,6 +193,73 @@
 		</div>
 	</template>
 
+    <div id="envelopeEditor">
+	    <div class="panel">
+            <div class="panel-body">
+                <div class="clearfix">
+                    <span class="pull-left">ADSRs</span>
+                    <button type="button" id="envelopeEditorClose" class="btn btn-warning btn-xs pull-right"><span class="glyphicon glyphicon-remove"></span></button>
+                </div>
+                <div id="envelopeEditorBody" class="clearfix">
+                    <div class="col-sm-6">
+                        <div id="cv1ADSR">
+                            <div class="envName">CV1</div>
+                            <div class="row">
+                                <div id="cv1attack" class="col-sm-3">
+                                    <div class="slidevalue">0</div>
+                                    <div class="slide"></div>
+                                    <div class="slidelabel">A</div>
+                                </div>
+                                <div id="cv1decay" class="col-sm-3">
+                                    <div class="slidevalue">0</div>
+                                    <div class="slide"></div>
+                                    <div class="slidelabel">D</div>
+                                </div>
+                                <div id="cv1sustain" class="col-sm-3">
+                                    <div class="slidevalue">0</div>
+                                    <div class="slide"></div>
+                                    <div class="slidelabel">S</div>
+                                </div>
+                                <div id="cv1release" class="col-sm-3">
+                                    <div class="slidevalue">0</div>
+                                    <div class="slide"></div>
+                                    <div class="slidelabel">R</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6" class="row">
+                        <div id="cv2ADSR">
+                            <div class="envName">CV2</div>
+                            <div class="row">
+                                <div id="cv2attack" class="col-sm-3">
+                                    <div class="slidevalue">0</div>
+                                    <div class="slide"></div>
+                                    <div class="slidelabel">A</div>
+                                </div>
+                                <div id="cv2decay" class="col-sm-3">
+                                    <div class="slidevalue">0</div>
+                                    <div class="slide"></div>
+                                    <div class="slidelabel">D</div>
+                                </div>
+                                <div id="cv2sustain" class="col-sm-3">
+                                    <div class="slidevalue">0</div>
+                                    <div class="slide"></div>
+                                    <div class="slidelabel">S</div>
+                                </div>
+                                <div id="cv2release" class="col-sm-3">
+                                    <div class="slidevalue">0</div>
+                                    <div class="slide"></div>
+                                    <div class="slidelabel">R</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+	        </div>
+        </div>
+    </div>
+    
 	<script type='text/javascript' src="js/nouislider.min.js"></script>
 	<script type='text/javascript' src="js/sequencerlib.js"></script>
 	<script type='text/javascript' src="js/sequencer.js"></script>

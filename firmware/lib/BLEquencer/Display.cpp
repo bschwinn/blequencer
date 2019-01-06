@@ -14,9 +14,9 @@ Display::Display(int splash) {
 }
 
 // set us up
-void Display::begin(bool arpMode, bool shFollow, float spd, int gateWidth) {
+void Display::begin(bool arpMode, int fxAlgo, float spd, int gateWidth) {
     _arpMode = arpMode;
-    _shFollowMode = shFollow;
+    _effectsAlgo = fxAlgo;
     _speed = spd;
     _gateWidth = gateWidth;
     _lcd = Adafruit_RGBLCDShield();
@@ -25,9 +25,9 @@ void Display::begin(bool arpMode, bool shFollow, float spd, int gateWidth) {
 }
 
 // update internals
-void Display::update() {
+void Display::update(unsigned long currMicros, unsigned long currMillis) {
     if ( _splashing ) {
-        if ( (millis() - _startTime) > _splashTime) {
+        if ( (currMillis - _startTime) > _splashTime) {
             this->_initDisplay();
             _splashing = false;
         }
@@ -44,7 +44,7 @@ void Display::_splashDisplay() {
 void Display::_initDisplay() {
     _lcd.clear();
     this->setArpMode(_arpMode);
-    this->setSampleHoldMode(_shFollowMode);
+    this->setEffectsAlgo(_effectsAlgo);
     this->setSpeed(_speed);
     this->setGateWidth(_gateWidth);
 }
@@ -59,13 +59,15 @@ void Display::setArpMode(bool arp) {
     }
 }
 
-void Display::setSampleHoldMode(bool follow) {
-    _shFollowMode = follow;
+void Display::setEffectsAlgo(int algo) {
+    _effectsAlgo = algo;
     _lcd.setCursor(5,0);
-    if ( follow ) {
+    if ( _effectsAlgo == 0 ) {
         _lcd.print("FOL");
-    } else {
+    } else if ( _effectsAlgo == 1 ) {
         _lcd.print("HLD");
+    } else {
+        _lcd.print("QUZ");
     }
 }
 

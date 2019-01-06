@@ -24,7 +24,7 @@ public:
     
     // called each scan
     void begin(uint16_t);
-    void update();
+    void update(unsigned long currMicros, unsigned long currMillis);
     void sendSpeedUpdate(int);
     void sendStepUpdate(int, int, int);
     void sendNoteUpdate(int, int);
@@ -45,6 +45,7 @@ public:
     static const int CMD_DUMP  = 14; // dump all internal settings/state
     static const int CMD_STRST = 15; // reset toggle for a step
     static const int CMD_STENB = 16; // mute toggle for a step
+    static const int CMD_ADSR  = 17; // ADSR value update
     
     static const int CMD_UNDEF = 99;
 

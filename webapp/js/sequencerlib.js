@@ -533,6 +533,9 @@ fakeContainer.prototype = {
         if ( data.level != null ) {
             console.log( "FakeContainer - output change - value: " + data.level);
         }
+        if ( data.envelope != null ) {
+            console.log(`FakeContainer - envelope change - env: ${data.envelope}, state: ${data.state}, value: ${data.val}`);
+        }
         if ( data.reset ) {
             var step = data.reset;
             if (step < this.maxSteps-1) {
